@@ -99,6 +99,14 @@ class Design extends Model
     }
 
     /**
+ * Design has many Order Items
+ */
+public function orderItems()
+{
+    return $this->hasMany(OrderItem::class);
+}
+
+    /**
      * Scope: Filter by user
      */
     public function scopeForUser($query, $userId)

@@ -64,7 +64,13 @@ class User extends Authenticatable
         return $this->hasOne(Address::class)->where('is_default', true);
     }
 
-
+    /**
+ * User has many Orders
+ */
+public function orders()
+{
+    return $this->hasMany(Order::class);
+}
      // Scope a query to only include active users.
     public function scopeActive($query)
     {
@@ -129,4 +135,26 @@ public function designs()
     return $this->hasMany(Design::class);
 }
 
+public function wallet()
+{
+    return $this->hasOne(Wallet::class);
+}
+
+public function getOrCreateWallet(): Wallet
+{
+    return $this->wallet()->firstOrCreate(
+        ['user_id' => $this->id],
+        ['amount' => 0]
+    );
+}
+public function coupons()
+{
+    return $this->belongsToMany(Coupon::class, 'coupon_user')
+        ->withTimestamps();
+}
+
+public function couponUsages()
+{
+    return $this->hasMany(CouponUsage::class);
+}
 }

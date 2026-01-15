@@ -9,9 +9,11 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\DesignResource;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
 class DesignController extends Controller
 {
     use AuthorizesRequests;
+
     /**
      * Display a listing of all designs (Admin view).
      */
@@ -19,7 +21,7 @@ class DesignController extends Controller
     {
         $this->authorize('viewAll', Design::class);
 
-        $query = Design::with(['user', 'measurement', 'images', 'designOptions']);
+        $query = Design::with(['user', 'measurements', 'images', 'designOptions']);
 
         // Search by design name or user name
         if ($request->filled('search')) {
@@ -44,7 +46,7 @@ class DesignController extends Controller
             $query->byDesignOption($request->input('design_option_id'));
         }
 
-        // Filter by user 
+        // Filter by user
         if ($request->filled('user_id')) {
             $query->forUser($request->input('user_id'));
         }
@@ -89,7 +91,7 @@ class DesignController extends Controller
     {
         $this->authorize('view', $design);
 
-        $design->load(['user', 'measurement', 'images', 'designOptions']);
+        $design->load(['user', 'measurements', 'images', 'designOptions']);
 
         return response()->json([
             'success' => true,
@@ -109,8 +111,9 @@ class DesignController extends Controller
             'total_designs' => Design::count(),
             'active_designs' => Design::active()->count(),
             'total_users' => Design::distinct('user_id')->count('user_id'),
-            'designs_by_size' => Design::join('measurements', 'designs.measurement_id', '=', 'measurements.id')
-                ->select('measurements.size', DB::raw('count(*) as count'))
+            'designs_by_size' => Design::join('design_measurements', 'designs.id', '=', 'design_measurements.design_id')
+                ->join('measurements', 'design_measurements.measurement_id', '=', 'measurements.id')
+                ->select('measurements.size', DB::raw('count(DISTINCT designs.id) as count'))
                 ->groupBy('measurements.size')
                 ->get(),
             'average_price' => Design::avg('price'),

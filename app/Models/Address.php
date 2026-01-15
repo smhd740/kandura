@@ -62,6 +62,14 @@ class Address extends Model
     }
 
     /**
+ * Address has many Orders
+ */
+public function orders()
+{
+    return $this->hasMany(Order::class);
+}
+
+    /**
      * Scope: Filter default addresses
      */
     public function scopeDefault($query)

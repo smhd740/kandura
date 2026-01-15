@@ -64,6 +64,14 @@ class DesignOption extends Model
     }
 
     /**
+ * DesignOption belongs to many Order Items
+ */
+public function orderItems()
+{
+    return $this->belongsToMany(OrderItem::class, 'design_option_order_item')
+        ->withTimestamps();
+}
+    /**
      * Scope: Filter only active options
      */
     public function scopeActive($query)

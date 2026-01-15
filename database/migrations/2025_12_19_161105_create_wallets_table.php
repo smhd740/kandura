@@ -8,19 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('cities', function (Blueprint $table) {
+        Schema::create('wallets', function (Blueprint $table) {
             $table->id();
-            $table->json('name');
-            $table->boolean('is_active')->default(true);
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->decimal('amount', 10, 2)->default(0);
             $table->timestamps();
-            $table->softDeletes();
-            $table->index('is_active');
+
+            // Ensure one wallet per user
+            $table->unique('user_id');
         });
     }
 
-    
     public function down(): void
     {
-        Schema::dropIfExists('cities');
+        Schema::dropIfExists('wallets');
     }
 };

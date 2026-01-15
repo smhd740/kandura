@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Resources\Admin;
+namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class DesignResource extends JsonResource
+class OrderItemResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,43 +16,28 @@ class DesignResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'name' => [
-                'ar' => $this->getTranslation('name', 'ar'),
-                'en' => $this->getTranslation('name', 'en'),
-            ],
-            'description' => [
-                'ar' => $this->getTranslation('description', 'ar'),
-                'en' => $this->getTranslation('description', 'en'),
-            ],
-            'price' => (float) $this->price,
-            'is_active' => $this->is_active,
+            'order_id' => $this->order_id,
+            'quantity' => $this->quantity,
+            'unit_price' => (float) $this->unit_price,
+            'subtotal' => (float) $this->subtotal,
 
-            // User info
-            'user' => [
-                'id' => $this->user->id,
-                'name' => $this->user->name,
-                'email' => $this->user->email,
+            // Design info
+            'design' => [
+                'id' => $this->design->id,
+                'name' => [
+                    'ar' => $this->design->getTranslation('name', 'ar'),
+                    'en' => $this->design->getTranslation('name', 'en'),
+                ],
+                'primary_image' => $this->design->primary_image_url,
             ],
 
-            // Measurements/Sizes (many-to-many)
+            // Measurements
             'measurements' => $this->measurements->map(function ($measurement) {
                 return [
                     'id' => $measurement->id,
                     'size' => $measurement->size,
                 ];
             }),
-
-            // Images
-            'images' => $this->images->map(function ($image) {
-                return [
-                    'id' => $image->id,
-                    'url' => $image->image_url,
-                    'is_primary' => $image->is_primary,
-                    'order' => $image->order,
-                ];
-            }),
-
-            'primary_image' => $this->primary_image_url,
 
             // Design Options
             'design_options' => $this->designOptions->map(function ($option) {

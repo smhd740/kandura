@@ -49,6 +49,15 @@ class Measurement extends Model
     }
 
     /**
+ * Measurement belongs to many Order Items
+ */
+public function orderItems()
+{
+    return $this->belongsToMany(OrderItem::class, 'measurement_order_item')
+        ->withTimestamps();
+}
+
+    /**
      * Scope: Filter by user
      */
     public function scopeForUser($query, $userId)
