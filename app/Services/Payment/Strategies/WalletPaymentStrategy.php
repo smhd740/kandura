@@ -10,6 +10,7 @@ class WalletPaymentStrategy implements PaymentStrategyInterface
 {
     public function pay(Order $order, array $paymentData = []): array
     {
+
         DB::beginTransaction();
 
         try {
@@ -48,6 +49,7 @@ class WalletPaymentStrategy implements PaymentStrategyInterface
                 'payment_method' => 'wallet',
                 'payment_status' => 'paid',
                 'paid_at' => now(),
+                'status' => 'processing',
             ]);
 
             DB::commit();

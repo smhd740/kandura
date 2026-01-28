@@ -80,10 +80,17 @@ public function orders()
 
     //  Scope a query to filter by role.
 
+    // public function scopeRole($query, $role)
+    // {
+    //     return $query->where('role', $role);
+    // }
+
     public function scopeRole($query, $role)
-    {
-        return $query->where('role', $role);
-    }
+{
+    return $query->whereHas('roles', function ($q) use ($role) {
+        $q->where('name', $role);
+    });
+}
 
 
     //Scope a query to search users.
@@ -157,4 +164,12 @@ public function couponUsages()
 {
     return $this->hasMany(CouponUsage::class);
 }
+
+
+
+// public function getRoleAttribute()
+// {
+//     return $this->roles->first()?->name;
+// }
+
 }

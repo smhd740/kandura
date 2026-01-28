@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Spatie\Permission\Models\Role;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -30,7 +31,8 @@ class UserController extends Controller
 
         // Role filter
         if ($request->filled('role')) {
-            $query->where('role', $request->role);
+           // $query->where('role', $request->role);
+            $query->role($request->role);
         }
 
         // Status filter
@@ -56,7 +58,10 @@ class UserController extends Controller
      */
     public function create()
     {
-        return view('admin.users.create');
+        // Get all roles from Spatie
+        $roles = Role::orderBy('name')->pluck('name')->toArray();
+
+        return view('admin.users.create', compact('roles'));
     }
 
     /**
@@ -64,12 +69,15 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        // Get valid role names from Spatie
+        $validRoles = Role::pluck('name')->toArray();
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'phone' => ['required', 'string', 'max:20'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required', 'in:user,admin,super_admin'],
+            'role' => ['required', 'in:' . implode(',', $validRoles)],
             'is_active' => ['nullable', 'boolean'],
             'email_verified' => ['nullable', 'boolean'],
         ]);
@@ -87,6 +95,10 @@ class UserController extends Controller
 
         // Sync Spatie role
         $user->syncRoles([$validated['role']]);
+
+        if ($validated['role'] === 'user') {
+    $user->wallet()->create(['amount' => 0]);
+}
 
         return redirect()
             ->route('admin.users.show', $user)
@@ -116,7 +128,8 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        $roles = ['user', 'admin', 'super_admin'];
+        // Get all roles from Spatie
+        $roles = Role::orderBy('name')->pluck('name')->toArray();
 
         return view('admin.users.edit', compact('user', 'roles'));
     }
@@ -126,11 +139,15 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        // Get valid role names from Spatie
+        $validRoles = Role::pluck('name')->toArray();
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'phone' => ['required', 'string', 'max:20'],
-            'role' => ['required', 'in:user,admin,super_admin'],
+           // 'role' => ['required', 'in:' . implode(',', $validRoles)],
+        'role' => ['required', Rule::exists('roles', 'name')]
         ]);
 
         // Update password if provided

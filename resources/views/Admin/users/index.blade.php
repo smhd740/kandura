@@ -45,16 +45,19 @@
                     </div>
                 </div>
 
-                <!-- Role Filter -->
-                <div class="col-md-3">
-                    <label class="form-label">{{ __('Role') }}</label>
-                    <select name="role" class="form-select">
-                        <option value="">{{ __('All Roles') }}</option>
-                        <option value="user" {{ request('role') == 'user' ? 'selected' : '' }}>{{ __('User') }}</option>
-                        <option value="admin" {{ request('role') == 'admin' ? 'selected' : '' }}>{{ __('Admin') }}</option>
-                        <option value="super_admin" {{ request('role') == 'super_admin' ? 'selected' : '' }}>{{ __('Super Admin') }}</option>
-                    </select>
-                </div>
+              <!-- Role Filter -->
+<div class="col-md-3">
+    <label class="form-label">{{ __('Role') }}</label>
+    <select name="role" class="form-select">
+        <option value="">{{ __('All Roles') }}</option>
+        @foreach(\Spatie\Permission\Models\Role::orderBy('name')->get() as $role)
+            <option value="{{ $role->name }}" {{ request('role') == $role->name ? 'selected' : '' }}>
+                {{ __(ucfirst(str_replace('_', ' ', $role->name))) }}
+            </option>
+        @endforeach
+    </select>
+</div>
+
 
                 <!-- Status Filter -->
                 <div class="col-md-3">

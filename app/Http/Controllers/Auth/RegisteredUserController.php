@@ -47,6 +47,12 @@ class RegisteredUserController extends Controller
             'is_active' => true,   // Active by default
         ]);
 
+
+        // Assign role using Spatie
+$user->assignRole('user');
+
+// Create wallet
+$user->wallet()->create(['amount' => 0]);
         // Fire registered event
         event(new Registered($user));
 

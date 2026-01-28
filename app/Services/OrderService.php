@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Services;
-
+use App\Models\User;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Design;
@@ -10,77 +10,218 @@ use Illuminate\Support\Facades\Log;
 
 class OrderService
 {
+    protected $couponService;
+
+    public function __construct(CouponService $couponService)
+    {
+        $this->couponService = $couponService;
+    }
+
     /**
      * Create a new order with items
      */
+
+
+//  public function createOrder(array $data, $userId)
+// {
+//     DB::beginTransaction();
+//     $user = User::findOrFail($userId);
+//     try {
+//         // 1. حساب الـ subtotal
+//         $subtotal = 0;
+//         foreach ($data['items'] as $itemData) {
+//             $design = Design::find($itemData['design_id']);
+//             $subtotal += ($design->price * $itemData['quantity']);
+//         }
+
+//         // 2. التحقق من الكوبون
+//         $couponId = null;
+//         $discountAmount = 0;
+
+//         if (!empty($data['coupon_code'])) {
+//             $couponValidation = $this->couponService->validateCoupon(
+//                 $data['coupon_code'],
+//                 $user,
+//                 $subtotal
+//             );
+
+//             if (!$couponValidation['valid']) {
+//                 DB::rollBack();
+//                 throw new \Exception($couponValidation['message']);
+//             }
+
+//             $couponId = $couponValidation['coupon']->id;
+//             $discountAmount = $couponValidation['discount_amount'];
+//         }
+
+//         $totalAmount = $subtotal - $discountAmount;
+
+//         // 3. إنشاء الطلب
+//         $order = Order::create([
+
+//             'user_id' => $userId,
+//             'address_id' => $data['address_id'],
+//             'order_number' => Order::generateOrderNumber(),
+//             'status' => 'pending',
+//             'notes' => $data['notes'] ?? null,
+//             'coupon_id' => $couponId,
+//             'discount_amount' => $discountAmount,
+//             'subtotal' => $subtotal,
+//             'total_amount' => $totalAmount,
+//         ]);
+//         Log::critical('ORDER AFTER CREATE', $order->toArray());
+//         // 4. إنشاء عناصر الطلب
+//         foreach ($data['items'] as $itemData) {
+//             $design = Design::find($itemData['design_id']);
+
+//             $orderItem = OrderItem::create([
+//                 'order_id' => $order->id,
+//                 'design_id' => $design->id,
+//                 'quantity' => $itemData['quantity'],
+//                 'unit_price' => $design->price,
+//                 'subtotal' => 0, // بينحسب من المودل
+//             ]);
+
+//             // Attach measurements
+//             if (!empty($itemData['measurement_ids'])) {
+//                 $orderItem->measurements()->attach($itemData['measurement_ids']);
+//             }
+
+//             // Attach design options
+//             if (!empty($itemData['design_option_ids'])) {
+//                 $orderItem->designOptions()->attach($itemData['design_option_ids']);
+//             }
+//         }
+
+//         // 5. تطبيق الكوبون
+//         if ($couponId) {
+//             $this->couponService->applyCouponToOrder(
+//                 $couponValidation['coupon'],
+//                 $user,
+//                 $order->id,
+//                 $discountAmount
+//             );
+//         }
+
+//         DB::commit();
+//         $order->refresh();
+// Log::critical('ORDER AFTER COMMIT', $order->toArray());
+
+
+//         $order->load(['user', 'address.city', 'items.design', 'items.measurements', 'items.designOptions', 'coupon']);
+
+//         return $order;
+
+//     } catch (\Exception $e) {
+//         DB::rollBack();
+//         Log::error('Order creation failed: ' . $e->getMessage());
+//         throw $e;
+//     }
+// }
+
     public function createOrder(array $data, $userId)
-    {
-        DB::beginTransaction();
+{
+    DB::beginTransaction();
+    $user = User::findOrFail($userId);
 
-        try {
-            // 1. Create the order
-            $order = Order::create([
-                'user_id' => $userId,
-                'address_id' => $data['address_id'],
-                'order_number' => Order::generateOrderNumber(),
-                'status' => 'pending',
-                'notes' => $data['notes'] ?? null,
-                'total_amount' => 0, // Will be calculated
-            ]);
+    try {
+        // 1. حساب الـ subtotal
+        $subtotal = 0;
+        foreach ($data['items'] as $itemData) {
+            $design = Design::find($itemData['design_id']);
+            $subtotal += ($design->price * $itemData['quantity']);
+        }
 
-            // 2. Create order items
-            $totalAmount = 0;
+        // 2. التحقق من الكوبون
+        $couponId = null;
+        $discountAmount = 0;
 
-            foreach ($data['items'] as $itemData) {
-                // Get design (removed findOrFail - validation done in Request)
-                $design = Design::find($itemData['design_id']);
+        if (!empty($data['coupon_code'])) {
+            $couponValidation = $this->couponService->validateCoupon(
+                $data['coupon_code'],
+                $user,
+                $subtotal
+            );
 
-                // Create order item
-                $orderItem = OrderItem::create([
-                    'order_id' => $order->id,
-                    'design_id' => $design->id,
-                    'quantity' => $itemData['quantity'],
-                    'unit_price' => $design->price, // Save price at order time
-                    'subtotal' => 0, // Will be calculated in model
-                ]);
-
-                // Attach measurements
-                if (!empty($itemData['measurement_ids'])) {
-                    $orderItem->measurements()->attach($itemData['measurement_ids']);
-                }
-
-                // Attach design options
-                if (!empty($itemData['design_option_ids'])) {
-                    $orderItem->designOptions()->attach($itemData['design_option_ids']);
-                }
-
-                // Add to total
-                $totalAmount += $orderItem->subtotal;
+            if (!$couponValidation['valid']) {
+                DB::rollBack();
+                throw new \Exception($couponValidation['message']);
             }
 
-            // 3. Update order total amount
-            $order->update(['total_amount' => $totalAmount]);
-
-            DB::commit();
-
-            // Load relationships for response
-            $order->load(['user', 'address.city', 'items.design', 'items.measurements', 'items.designOptions']);
-
-            return $order;
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Order creation failed: ' . $e->getMessage());
-            throw $e;
+            $couponId = $couponValidation['coupon']->id;
+            $discountAmount = $couponValidation['discount_amount'];
         }
+
+        $totalAmount = $subtotal - $discountAmount;
+
+        // 3. إنشاء الطلب
+        $order = Order::create([
+            'user_id' => $userId,
+            'address_id' => $data['address_id'],
+            'order_number' => Order::generateOrderNumber(),
+            'status' => 'pending',
+            'payment_status' => 'pending',
+            'notes' => $data['notes'] ?? null,
+            'coupon_id' => $couponId,
+            'discount_amount' => $discountAmount,
+            'subtotal' => $subtotal,
+            'total_amount' => $totalAmount,
+        ]);
+
+        Log::critical('ORDER AFTER CREATE', $order->toArray());
+
+        // 4. إنشاء عناصر الطلب
+        foreach ($data['items'] as $itemData) {
+            $design = Design::find($itemData['design_id']);
+
+            $orderItem = OrderItem::create([
+                'order_id' => $order->id,
+                'design_id' => $design->id,
+                'quantity' => $itemData['quantity'],
+                'unit_price' => $design->price,
+                'subtotal' => 0,
+            ]);
+
+            if (!empty($itemData['measurement_ids'])) {
+                $orderItem->measurements()->attach($itemData['measurement_ids']);
+            }
+
+            if (!empty($itemData['design_option_ids'])) {
+                $orderItem->designOptions()->attach($itemData['design_option_ids']);
+            }
+        }
+
+        // 5. تطبيق الكوبون
+        if ($couponId) {
+            $this->couponService->applyCouponToOrder(
+                $couponValidation['coupon'],
+                $user,
+                $order->id,
+                $discountAmount
+            );
+        }
+
+        DB::commit();
+        $order->refresh();
+        Log::critical('ORDER AFTER COMMIT', $order->toArray());
+
+        $order->load(['user', 'address.city', 'items.design', 'items.measurements', 'items.designOptions', 'coupon']);
+
+        return $order;
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Order creation failed: ' . $e->getMessage());
+        throw $e;
     }
+}
 
     /**
      * Get orders for a specific user with filters
      */
     public function getOrdersForUser($userId, array $filters = [])
     {
-        $query = Order::with(['address.city', 'items.design.images'])
+        $query = Order::with(['address.city', 'items.design.images', 'coupon'])
             ->where('user_id', $userId);
 
         // Search by order number
@@ -118,7 +259,7 @@ class OrderService
      */
     public function getOrdersForAdmin(array $filters = [])
     {
-        $query = Order::with(['user', 'address.city', 'items.design']);
+        $query = Order::with(['user', 'address.city', 'items.design', 'coupon']);
 
         // Search by order number or user name
         if (!empty($filters['search'])) {
@@ -163,12 +304,13 @@ class OrderService
     public function getOrderById($orderId)
     {
         return Order::with([
-            'user',
-            'address.city',
-            'items.design.images',
-            'items.measurements',
-            'items.designOptions'
-        ])->find($orderId); // Changed from findOrFail to find
+    'user',
+    'address.city',
+    'items.design.images',
+    'items.measurements',
+    'items.designOptions',
+    'coupon'
+])->find($orderId);
     }
 
     /**
@@ -186,6 +328,17 @@ public function cancelOrder(Order $order)
         // Update status
         $order->status = 'cancelled';
         $order->save();
+
+        // Refund coupon usage if coupon was used
+if ($order->coupon_id) {
+    $coupon = $order->coupon;
+    $coupon->decrementUsage();
+
+    $coupon->usages()
+        ->where('user_id', $order->user_id)
+        ->where('order_id', $order->id)
+        ->delete();
+}
 
         // Refund to wallet if paid from wallet
         if ($order->payment_method === 'wallet' && $order->payment_status === 'paid') {

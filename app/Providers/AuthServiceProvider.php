@@ -3,13 +3,15 @@
 namespace App\Providers;
 
 use App\Models\Order;
+use App\Models\Coupon;
 use App\Models\Design;
-use App\Models\Wallet;
 
+use App\Models\Wallet;
 use App\Models\Address;
 use App\Models\Measurement;
 use App\Models\DesignOption;
 use App\Policies\OrderPolicy;
+use App\Policies\CouponPolicy;
 use App\Policies\DesignPolicy;
 use App\Policies\WalletPolicy;
 use App\Policies\AddressPolicy;
@@ -26,6 +28,7 @@ class AuthServiceProvider extends ServiceProvider
         Design::class => DesignPolicy::class,
         Order::class => OrderPolicy::class,
         Wallet::class => WalletPolicy::class,
+        Coupon::class => CouponPolicy::class,
     ];
 
     public function boot(): void

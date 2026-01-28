@@ -13,6 +13,7 @@ class CashOnDeliveryStrategy implements PaymentStrategyInterface
             $order->update([
                 'payment_method' => 'cod',
                 'payment_status' => 'pending', // Will be marked as paid by admin on delivery
+                'status' => 'processing',
             ]);
 
             return [

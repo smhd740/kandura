@@ -6,13 +6,15 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CityController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\DesignController;
+use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\WalletController;
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\Admin\DesignOptionController;
-// الاستدعاءات الجديدة الخاصة بالدفع والمحفظة
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use App\Http\Controllers\Api\CouponController as ApiCouponController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\DesignController as AdminDesignController;
 use App\Http\Controllers\Admin\WalletController as AdminWalletController;
@@ -24,12 +26,6 @@ use App\Http\Controllers\Admin\MeasurementController as AdminMeasurementControll
 |--------------------------------------------------------------------------
 */
 
-// Stripe Webhook (خارج مجموعة الـ Auth وبدون middleware الحماية)
-Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle'])
-    ->withoutMiddleware([
-        VerifyCsrfToken::class,
-    ]);
-
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -38,7 +34,7 @@ Route::get('/user', function (Request $request) {
 Route::post('auth/register', [AuthController::class, 'register']);
 Route::post('auth/login', [AuthController::class, 'login']);
 
-// Cities
+// Cities (Public)
 Route::prefix('cities')->group(function () {
     Route::get('/', [CityController::class, 'index']);
     Route::get('/{id}', [CityController::class, 'show']);
@@ -46,89 +42,98 @@ Route::prefix('cities')->group(function () {
 
 // Protected Routes (للمستخدمين المسجلين)
 Route::middleware('auth:sanctum')->group(function () {
+
     // Auth Routes
     Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::get('auth/profile', [AuthController::class, 'profile']);
     Route::put('auth/profile', [AuthController::class, 'updateProfile']);
     Route::post('auth/profile', [AuthController::class, 'updateProfile']);
 
-    // Address Routes
-    Route::apiResource('addresses', AddressController::class);
+    // Address Routes - كل route بصلاحيته
+    Route::get('addresses', [AddressController::class, 'index'])->middleware('permission:view addresses');
+    Route::get('addresses/{address}', [AddressController::class, 'show'])->middleware('permission:view addresses');
+    Route::post('addresses', [AddressController::class, 'store'])->middleware('permission:create addresses');
+    Route::put('addresses/{address}', [AddressController::class, 'update'])->middleware('permission:edit addresses');
+    Route::patch('addresses/{address}', [AddressController::class, 'update'])->middleware('permission:edit addresses');
+    Route::delete('addresses/{address}', [AddressController::class, 'destroy'])->middleware('permission:delete addresses');
 
-    // User Design Routes - Listing & Search
-    Route::get('designs/my-designs', [DesignController::class, 'myDesigns']);
-    Route::get('designs/browse', [DesignController::class, 'browseDesigns']);
+    // User Design Routes - كل route بصلاحيته
+    Route::get('designs/my-designs', [DesignController::class, 'myDesigns'])->middleware('permission:view designs');
+    Route::get('designs/browse', [DesignController::class, 'browseDesigns'])->middleware('permission:view designs');
+    Route::get('designs', [DesignController::class, 'index'])->middleware('permission:view designs');
+    Route::get('designs/{design}', [DesignController::class, 'show'])->middleware('permission:view designs');
+    Route::post('designs', [DesignController::class, 'store'])->middleware('permission:create designs');
+    Route::put('designs/{design}', [DesignController::class, 'update'])->middleware('permission:edit designs');
+    Route::patch('designs/{design}', [DesignController::class, 'update'])->middleware('permission:edit designs');
+    Route::delete('designs/{design}', [DesignController::class, 'destroy'])->middleware('permission:delete designs');
 
-    // User Design Routes
-    Route::apiResource('designs', DesignController::class);
+    // User Order Routes - كل route بصلاحيته
+    Route::post('orders', [OrderController::class, 'store'])->middleware('permission:create orders');
+    Route::get('orders/my-orders', [OrderController::class, 'myOrders'])->middleware('permission:view orders');
+    Route::get('orders/{id}', [OrderController::class, 'show'])->middleware('permission:view orders');
+    Route::post('orders/{id}/cancel', [OrderController::class, 'cancel'])->middleware('permission:cancel orders');
 
-    // User Order Routes
-    Route::post('orders', [OrderController::class, 'store']);
-    Route::get('orders/my-orders', [OrderController::class, 'myOrders']);
-    Route::get('orders/{id}', [OrderController::class, 'show']);
-    Route::post('orders/{id}/cancel', [OrderController::class, 'cancel']);
+    // Review Routes - كل route بصلاحيته
+    Route::post('reviews', [ReviewController::class, 'store'])->middleware('permission:create orders');
+    Route::get('reviews', [ReviewController::class, 'index'])->middleware('permission:view orders');
+    Route::get('reviews/{id}', [ReviewController::class, 'show'])->middleware('permission:view orders');
 
-    // --- راوتات المحفظة والدفع الجديدة (User) ---
     // Wallet Routes
-    Route::prefix('wallet')->group(function () {
-        Route::get('balance', [WalletController::class, 'balance']);
-        Route::get('transactions', [WalletController::class, 'transactions']);
-    });
+    Route::get('wallet/balance', [WalletController::class, 'balance'])->middleware('permission:view wallets');
+    Route::get('wallet/transactions', [WalletController::class, 'transactions'])->middleware('permission:view wallet transactions');
 
-    // Payment Methods
-    Route::prefix('payment')->group(function () {
-        Route::get('methods', [PaymentController::class, 'paymentMethods']);
-    });
+    // Payment Methods (كل مستخدم مسجل يقدر يشوفها)
+    Route::get('payment/methods', [PaymentController::class, 'paymentMethods']);
 
     // Process Payment for Order
-    Route::post('orders/{id}/payment', [PaymentController::class, 'processPayment']);
+    Route::post('orders/{id}/payment', [PaymentController::class, 'processPayment'])->middleware('permission:create orders');
+
+    // Coupon Validation (كل مستخدم مسجل يقدر يفحص كوبون)
+    Route::post('coupons/validate', [ApiCouponController::class, 'validate']);
 });
 
 // Admin Routes
-Route::prefix('admin')->middleware(['auth:sanctum'])->group(function () {
+Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 
-    // Design Options Management (CRUD)
-    Route::apiResource('design-options', DesignOptionController::class);
-    Route::post('design-options/{designOption}/toggle-active', [DesignOptionController::class, 'toggleActive'])
-        ->name('admin.design-options.toggle-active');
-    Route::get('design-option-types', [DesignOptionController::class, 'types'])
-        ->name('admin.design-options.types');
+    // Design Options Management - كل route بصلاحيته
+    Route::get('design-options', [DesignOptionController::class, 'index'])->middleware('permission:view design-options');
+    Route::get('design-options/{designOption}', [DesignOptionController::class, 'show'])->middleware('permission:view design-options');
+    Route::post('design-options', [DesignOptionController::class, 'store'])->middleware('permission:create design-options');
+    Route::put('design-options/{designOption}', [DesignOptionController::class, 'update'])->middleware('permission:edit design-options');
+    Route::patch('design-options/{designOption}', [DesignOptionController::class, 'update'])->middleware('permission:edit design-options');
+    Route::delete('design-options/{designOption}', [DesignOptionController::class, 'destroy'])->middleware('permission:delete design-options');
+    Route::post('design-options/{designOption}/toggle-active', [DesignOptionController::class, 'toggleActive'])->middleware('permission:edit design-options');
+    Route::get('design-option-types', [DesignOptionController::class, 'types'])->middleware('permission:view design-options');
 
-    // Measurements (View Only)
-    Route::get('measurements', [AdminMeasurementController::class, 'index'])
-        ->name('admin.measurements.index');
-    Route::get('measurements/{measurement}', [AdminMeasurementController::class, 'show'])
-        ->name('admin.measurements.show');
-    Route::get('available-sizes', [AdminMeasurementController::class, 'availableSizes'])
-        ->name('admin.measurements.available-sizes');
+    // Measurements (View Only) - كل route بصلاحيته
+    Route::get('measurements', [AdminMeasurementController::class, 'index'])->middleware('permission:view measurements');
+    Route::get('measurements/{measurement}', [AdminMeasurementController::class, 'show'])->middleware('permission:view measurements');
+    Route::get('available-sizes', [AdminMeasurementController::class, 'availableSizes'])->middleware('permission:view measurements');
 
-    // Designs (View All with Filters)
-    Route::get('designs', [AdminDesignController::class, 'index'])
-        ->name('admin.designs.index');
-    Route::get('designs/{design}', [AdminDesignController::class, 'show'])
-        ->name('admin.designs.show');
-    Route::get('design-statistics', [AdminDesignController::class, 'statistics'])
-        ->name('admin.designs.statistics');
+    // Designs (View All with Filters) - كل route بصلاحيته
+    Route::get('designs', [AdminDesignController::class, 'index'])->middleware('permission:view designs');
+    Route::get('designs/{design}', [AdminDesignController::class, 'show'])->middleware('permission:view designs');
+    Route::get('design-statistics', [AdminDesignController::class, 'statistics'])->middleware('permission:view designs');
 
-    // Orders (View All with Filters)
-    Route::get('orders', [AdminOrderController::class, 'index'])
-        ->name('admin.orders.index');
-    Route::get('orders/{id}', [AdminOrderController::class, 'show'])
-        ->name('admin.orders.show');
-    Route::patch('orders/{id}/status', [AdminOrderController::class, 'updateStatus'])
-        ->name('admin.orders.update-status');
-    Route::get('order-statistics', [AdminOrderController::class, 'statistics'])
-        ->name('admin.orders.statistics');
+    // Orders Management - كل route بصلاحيته
+    Route::get('orders', [AdminOrderController::class, 'index'])->middleware('permission:view orders');
+    Route::get('orders/{id}', [AdminOrderController::class, 'show'])->middleware('permission:view orders');
+    Route::patch('orders/{id}/status', [AdminOrderController::class, 'updateStatus'])->middleware('permission:update order status');
+    Route::get('order-statistics', [AdminOrderController::class, 'statistics'])->middleware('permission:view orders');
 
-    // --- راوتات إدارة المحفظة (Admin) ---
-    Route::prefix('wallet')->group(function () {
-        Route::get('{user_id}/balance', [AdminWalletController::class, 'balance'])
-            ->name('admin.wallet.balance');
-        Route::post('add-balance', [AdminWalletController::class, 'addBalance'])
-            ->name('admin.wallet.add-balance');
-        Route::post('deduct-balance', [AdminWalletController::class, 'deductBalance'])
-            ->name('admin.wallet.deduct-balance');
-        Route::get('{user_id}/transactions', [AdminWalletController::class, 'transactions'])
-            ->name('admin.wallet.transactions');
-    });
+    // Coupons Management - كل route بصلاحيته
+    Route::get('coupons', [AdminCouponController::class, 'index'])->middleware('permission:view coupons');
+    Route::get('coupons/{coupon}', [AdminCouponController::class, 'show'])->middleware('permission:view coupons');
+    Route::post('coupons', [AdminCouponController::class, 'store'])->middleware('permission:create coupons');
+    Route::put('coupons/{coupon}', [AdminCouponController::class, 'update'])->middleware('permission:edit coupons');
+    Route::patch('coupons/{coupon}', [AdminCouponController::class, 'update'])->middleware('permission:edit coupons');
+    Route::delete('coupons/{coupon}', [AdminCouponController::class, 'destroy'])->middleware('permission:delete coupons');
+    Route::post('coupons/{coupon}/toggle-status', [AdminCouponController::class, 'toggleStatus'])->middleware('permission:edit coupons');
+    Route::get('coupon-statistics', [AdminCouponController::class, 'statistics'])->middleware('permission:view coupons');
+
+    // Wallet Management - كل route بصلاحيته
+    Route::get('wallet/{user_id}/balance', [AdminWalletController::class, 'balance'])->middleware('permission:view wallets');
+    Route::get('wallet/{user_id}/transactions', [AdminWalletController::class, 'transactions'])->middleware('permission:view wallet transactions');
+    Route::post('wallet/add-balance', [AdminWalletController::class, 'addBalance'])->middleware('permission:add wallet balance');
+    Route::post('wallet/deduct-balance', [AdminWalletController::class, 'deductBalance'])->middleware('permission:deduct wallet balance');
 });

@@ -22,9 +22,9 @@ class OrderResource extends JsonResource
             'notes' => $this->notes,
 
             'payment_method' => $this->payment_method,
-        'payment_status' => $this->payment_status,
-        'stripe_payment_intent_id' => $this->stripe_payment_intent_id,
-        'paid_at' => $this->paid_at?->format('Y-m-d H:i:s'),
+            'payment_status' => $this->payment_status,
+            'stripe_payment_intent_id' => $this->stripe_payment_intent_id,
+            'paid_at' => $this->paid_at?->format('Y-m-d H:i:s'),
             // User info (basic)
             'user' => [
                 'id' => $this->user->id,

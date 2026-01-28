@@ -191,4 +191,20 @@ public function coupon()
 {
     return $this->belongsTo(Coupon::class);
 }
+
+/**
+ * Order has one Invoice
+ */
+public function invoice()
+{
+    return $this->hasOne(Invoice::class);
+}
+
+/**
+ * Order has one Review
+ */
+public function review()
+{
+    return $this->hasOne(Review::class);
+}
 }

@@ -311,8 +311,135 @@
 
                         <!-- Divider -->
                         <li class="nav-item">
+                            <div class="hr-text my-3">{{ __('Kandura Management') }}</div>
+                        </li>
+
+                        <!-- Design Options (Admin & Super Admin only) -->
+                        @if(in_array(auth()->user()->role, ['admin', 'super_admin']))
+                        <li class="nav-item {{ request()->routeIs('admin.design-options.*') ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ route('admin.design-options.index') }}">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-palette fs-2"></i>
+                                </span>
+                                <span class="nav-link-title">{{ __('Design Options') }}</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        <!-- Measurements (Sizes) (Admin & Super Admin only) -->
+                        @if(in_array(auth()->user()->role, ['admin', 'super_admin']))
+                        <li class="nav-item {{ request()->routeIs('admin.measurements.*') ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ route('admin.measurements.index') }}">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-ruler fs-2"></i>
+                                </span>
+                                <span class="nav-link-title">{{ __('Sizes') }}</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        <!-- All Designs (Admin & Super Admin only) -->
+                        @if(in_array(auth()->user()->role, ['admin', 'super_admin']))
+                        <li class="nav-item {{ request()->routeIs('admin.designs.*') ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ route('admin.designs.index') }}">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-shirt fs-2"></i>
+                                </span>
+                                <span class="nav-link-title">{{ __('All Designs') }}</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        <!-- Roles & Permissions (Super Admin Only) -->
+                        @if(auth()->user()->role === 'super_admin')
+                        <li class="nav-item">
+                            <div class="hr-text my-3">{{ __('Access Control') }}</div>
+                        </li>
+
+                        <li class="nav-item {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ route('admin.roles.index') }}">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-shield-lock fs-2"></i>
+                                </span>
+                                <span class="nav-link-title">{{ __('Roles') }}</span>
+                            </a>
+                        </li>
+
+                        <li class="nav-item {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ route('admin.permissions.index') }}">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-key fs-2"></i>
+                                </span>
+                                <span class="nav-link-title">{{ __('Permissions') }}</span>
+                            </a>
+                        </li>
+                        @endif
+
+
+
+                        <!-- Add this section after "Kandura Management" divider and before "System" divider -->
+
+<!-- Divider -->
+<li class="nav-item">
+    <div class="hr-text my-3">{{ __('Orders & Sales') }}</div>
+</li>
+
+<!-- Orders (Admin & Super Admin only) -->
+@if(in_array(auth()->user()->role, ['admin', 'super_admin']))
+<li class="nav-item {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
+    <a class="nav-link" href="{{ route('admin.orders.index') }}">
+        <span class="nav-link-icon d-md-none d-lg-inline-block">
+            <i class="ti ti-shopping-cart fs-2"></i>
+        </span>
+        <span class="nav-link-title">{{ __('Orders') }}</span>
+    </a>
+</li>
+@endif
+
+<!-- Coupons (Admin & Super Admin only) -->
+@if(in_array(auth()->user()->role, ['admin', 'super_admin']))
+<li class="nav-item {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
+    <a class="nav-link" href="{{ route('admin.coupons.index') }}">
+        <span class="nav-link-icon d-md-none d-lg-inline-block">
+            <i class="ti ti-discount-2 fs-2"></i>
+        </span>
+        <span class="nav-link-title">{{ __('Coupons') }}</span>
+    </a>
+</li>
+@endif
+
+<!-- Wallets (Admin & Super Admin only) -->
+@if(in_array(auth()->user()->role, ['admin', 'super_admin']))
+<li class="nav-item {{ request()->routeIs('admin.wallets.*') ? 'active' : '' }}">
+    <a class="nav-link" href="{{ route('admin.wallets.index') }}">
+        <span class="nav-link-icon d-md-none d-lg-inline-block">
+            <i class="ti ti-wallet fs-2"></i>
+        </span>
+        <span class="nav-link-title">{{ __('Wallets') }}</span>
+    </a>
+</li>
+@endif
+
+<!-- Transactions (Admin & Super Admin only) -->
+@if(in_array(auth()->user()->role, ['admin', 'super_admin']))
+<li class="nav-item {{ request()->routeIs('admin.transactions.*') ? 'active' : '' }}">
+    <a class="nav-link" href="{{ route('admin.transactions.index') }}">
+        <span class="nav-link-icon d-md-none d-lg-inline-block">
+            <i class="ti ti-receipt fs-2"></i>
+        </span>
+        <span class="nav-link-title">{{ __('Transactions') }}</span>
+    </a>
+</li>
+@endif
+
+
+                        <!-- Divider -->
+                        <li class="nav-item">
                             <div class="hr-text my-3">{{ __('System') }}</div>
                         </li>
+
+
+
 
                         <!-- Settings -->
                         <li class="nav-item">

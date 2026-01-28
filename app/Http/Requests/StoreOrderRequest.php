@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Address;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreOrderRequest extends FormRequest
@@ -22,6 +23,7 @@ class StoreOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'coupon_code' => 'nullable|string|exists:coupons,code',
             'address_id' => 'required|exists:addresses,id',
             'notes' => 'nullable|string|max:1000',
 
@@ -52,6 +54,7 @@ class StoreOrderRequest extends FormRequest
 
             // Notes
             'notes.max' => 'الملاحظات لا يمكن أن تتجاوز 1000 حرف',
+
 
             // Items
             'items.required' => 'يجب إضافة عنصر واحد على الأقل للطلب',
@@ -130,7 +133,7 @@ class StoreOrderRequest extends FormRequest
 
             // Validate that address belongs to authenticated user
             if ($this->address_id) {
-                $address = \App\Models\Address::find($this->address_id);
+                $address = Address::find($this->address_id);
                 if ($address && $address->user_id !== auth()->id()) {
                     $message = $locale === 'ar'
                         ? 'العنوان المحدد لا ينتمي لك'

@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Order;
 use App\Models\Address;
 use App\Policies\AddressPolicy;
+use App\Observers\OrderObserver;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -23,5 +25,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(Address::class, AddressPolicy::class);
+        Order::observe(OrderObserver::class);
     }
 }

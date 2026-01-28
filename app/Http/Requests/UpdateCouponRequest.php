@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -24,6 +25,8 @@ class UpdateCouponRequest extends FormRequest
                 'regex:/^[A-Z0-9-_]+$/i',
                 Rule::unique('coupons', 'code')->ignore($couponId),
             ],
+
+            'one_time_per_user' => 'nullable|boolean',
 
             // Discount Type & Amount
             'discount_type' => 'sometimes|in:percentage,fixed',
@@ -55,12 +58,12 @@ class UpdateCouponRequest extends FormRequest
 
             // User Specific
             'is_user_specific' => 'boolean',
-            'user_ids' => [
+            'allowed_users' => [
                 'nullable',
                 'array',
-                'required_if:is_user_specific,true',
+                'required_if:is_user_specific,1',
             ],
-            'user_ids.*' => 'exists:users,id',
+            'allowed_users.*' => 'exists:users,id',
 
             // Description
             'description' => 'nullable|string|max:1000',
@@ -78,7 +81,7 @@ class UpdateCouponRequest extends FormRequest
         $validator->after(function ($validator) {
             $locale = app()->getLocale();
 
-            // نفس الـ validation من StoreCouponRequest
+            // Fixed discount should not exceed min_order_amount
             if ($this->discount_type === 'fixed' && $this->min_order_amount) {
                 if ($this->amount > $this->min_order_amount) {
                     $message = $locale === 'ar'

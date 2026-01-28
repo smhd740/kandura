@@ -20,7 +20,7 @@
 @section('content')
     <div class="row">
         <div class="col-lg-8 offset-lg-2">
-            <form method="POST" action="{{ route('admin.design-options.update', $designOption) }}" class="card">
+            <form method="POST" action="{{ route('admin.design-options.update', $designOption) }}" enctype="multipart/form-data" class="card">
                 @csrf
                 @method('PUT')
 
@@ -50,6 +50,58 @@
                         @error('type')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                    </div>
+
+                    <hr>
+
+                    {{-- Current Image --}}
+                    @if($designOption->image)
+                    <div class="mb-3">
+                        <label class="form-label">{{ __('Current Image') }}</label>
+                        <div>
+                            <img src="{{ asset('storage/' . $designOption->image) }}"
+                                 alt="{{ $designOption->getTranslation('name', app()->getLocale()) }}"
+                                 class="img-thumbnail"
+                                 style="max-width: 200px; max-height: 200px; object-fit: cover;">
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Upload New Image --}}
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {{ $designOption->image ? __('Change Image') : __('Upload Image') }}
+                            <span class="text-muted">({{ __('Optional') }})</span>
+                        </label>
+                        <input type="file"
+                               name="image"
+                               class="form-control @error('image') is-invalid @enderror"
+                               accept="image/*"
+                               id="imageInput">
+                        <small class="form-hint">
+                            {{ __('Upload an image representing this option. Max size: 2MB.') }}
+                        </small>
+                        @error('image')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+
+                        {{-- Image Preview --}}
+                        <div id="imagePreview" class="mt-3"></div>
+                    </div>
+
+                    {{-- Status --}}
+                    <div class="mb-3">
+                        <label class="form-check form-switch">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   name="is_active"
+                                   value="1"
+                                   {{ old('is_active', $designOption->is_active) ? 'checked' : '' }}>
+                            <span class="form-check-label">{{ __('Active') }}</span>
+                        </label>
+                        <small class="form-hint text-muted">
+                            {{ __('Inactive options will not be visible to users') }}
+                        </small>
                     </div>
 
                     <hr>
@@ -127,3 +179,36 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    // Image Preview
+    document.getElementById('imageInput').addEventListener('change', function(e) {
+        const preview = document.getElementById('imagePreview');
+        preview.innerHTML = '';
+
+        const file = e.target.files[0];
+
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'img-thumbnail';
+                img.style.maxWidth = '200px';
+                img.style.maxHeight = '200px';
+
+                const label = document.createElement('div');
+                label.className = 'text-muted small mb-2';
+                label.textContent = '{{ __("New Image Preview") }}:';
+
+                preview.appendChild(label);
+                preview.appendChild(img);
+            };
+
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
+@endpush

@@ -93,35 +93,37 @@
 
                     <h4 class="mb-3">{{ __('Account Settings') }}</h4>
 
-                    <!-- Role -->
-                    <div class="mb-3">
-                        <label class="form-label required">{{ __('Role') }}</label>
-                        <select name="role" class="form-select @error('role') is-invalid @enderror" required>
-                            <option value="">{{ __('Select role...') }}</option>
-                            <option value="user" {{ old('role') == 'user' ? 'selected' : '' }}>
-                                {{ __('User') }}
-                            </option>
-                            <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>
-                                {{ __('Admin') }}
-                            </option>
-                            @if(auth()->user()->role === 'super_admin')
-                            <option value="super_admin" {{ old('role') == 'super_admin' ? 'selected' : '' }}>
-                                {{ __('Super Admin') }}
-                            </option>
-                            @endif
-                        </select>
-                        @error('role')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                        @enderror
-                        <small class="form-hint">
-                            <i class="ti ti-info-circle"></i>
-                            <strong>{{ __('User') }}:</strong> {{ __('Regular user with basic permissions') }}<br>
-                            <strong>{{ __('Admin') }}:</strong> {{ __('Can manage users, addresses, and content') }}<br>
-                            @if(auth()->user()->role === 'super_admin')
-                            <strong>{{ __('Super Admin') }}:</strong> {{ __('Full system access') }}
-                            @endif
-                        </small>
-                    </div>
+                   <!-- Role -->
+<div class="mb-3">
+    <label class="form-label required">{{ __('Role') }}</label>
+    <select name="role" class="form-select @error('role') is-invalid @enderror" required>
+        <option value="">{{ __('Select role...') }}</option>
+
+        @foreach(\Spatie\Permission\Models\Role::orderBy('name')->get() as $role)
+            @if($role->name !== 'super_admin' || auth()->user()->role === 'super_admin')
+                <option value="{{ $role->name }}" {{ old('role') == $role->name ? 'selected' : '' }}>
+                    {{ __(ucfirst(str_replace('_', ' ', $role->name))) }}
+                </option>
+            @endif
+        @endforeach
+
+    </select>
+
+    @error('role')
+        <div class="invalid-feedback d-block">{{ $message }}</div>
+    @enderror
+
+    <small class="form-hint">
+        <i class="ti ti-info-circle"></i>
+        @foreach(\Spatie\Permission\Models\Role::orderBy('name')->get() as $role)
+            @if($role->name !== 'super_admin' || auth()->user()->role === 'super_admin')
+                <strong>{{ __(ucfirst(str_replace('_', ' ', $role->name))) }}:</strong>
+                {{ __('Role permissions depend on system configuration') }}<br>
+            @endif
+        @endforeach
+    </small>
+</div>
+
 
                     <!-- Active Status -->
                     <div class="mb-3">

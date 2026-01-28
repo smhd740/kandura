@@ -2,11 +2,9 @@
 
 namespace App\Services\Payment\Strategies;
 
+use App\Services\Payment\Strategies\PaymentStrategyInterface;
 use Stripe\Stripe;
 use App\Models\Order;
-use App\Models\Transaction;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Session;
 use Stripe\Checkout\Session as StripeSession;
 
 class StripePaymentStrategy implements PaymentStrategyInterface
@@ -39,7 +37,7 @@ class StripePaymentStrategy implements PaymentStrategyInterface
                 ]
             ]);
 
-            // Update order with payment intent
+            // حفظ معلومات الدفع في الطلب (لكن بدون اعتباره مدفوع)
             $order->update([
                 'payment_method' => 'stripe',
                 'stripe_payment_intent_id' => $session->id,
@@ -55,6 +53,7 @@ class StripePaymentStrategy implements PaymentStrategyInterface
             ];
 
         } catch (\Exception $e) {
+
             return [
                 'success' => false,
                 'message' => 'Stripe payment failed: ' . $e->getMessage(),

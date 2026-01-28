@@ -34,11 +34,11 @@
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
-                        <div class="subheader">{{ __('Total Users') }}</div>
+                        <div class="subheader">{{ __('Total Creators') }}</div>
                     </div>
                     <div class="d-flex align-items-baseline">
                         <div class="h1 mb-0 me-2">{{ $totalCreators ?? 0 }}</div>
-                        <div class="badge bg-azure-lt">{{ __('creators') }}</div>
+                        <div class="badge bg-azure-lt">{{ __('users') }}</div>
                     </div>
                 </div>
             </div>
@@ -51,7 +51,7 @@
                         <div class="subheader">{{ __('Avg. Price') }}</div>
                     </div>
                     <div class="d-flex align-items-baseline">
-                        <div class="h1 mb-0 me-2">{{ number_format($avgPrice ?? 0, 2) }}</div>
+                        <div class="h1 mb-0 me-2">{{ number_format($avgPrice ?? 0, 0) }}</div>
                         <div class="badge bg-green-lt">{{ __('SYP') }}</div>
                     </div>
                 </div>
@@ -75,6 +75,11 @@
 
     {{-- Filters Card --}}
     <div class="card mb-3">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="ti ti-filter"></i> {{ __('Search & Filters') }}
+            </h3>
+        </div>
         <div class="card-body">
             <form method="GET" action="{{ route('admin.designs.index') }}" class="row g-3">
                 {{-- Search by Design Name --}}
@@ -122,47 +127,74 @@
                     <input type="number" name="min_price" class="form-control"
                            placeholder="0"
                            value="{{ request('min_price') }}"
-                           step="0.01">
+                           step="0.01"
+                           min="0">
                 </div>
 
                 <div class="col-md-3">
                     <label class="form-label">{{ __('Max Price') }}</label>
                     <input type="number" name="max_price" class="form-control"
-                           placeholder="10000"
+                           placeholder="1000000"
                            value="{{ request('max_price') }}"
-                           step="0.01">
+                           step="0.01"
+                           min="0">
                 </div>
 
                 {{-- Filter by Design Option (Bonus) --}}
-                <div class="col-md-3">
-                    <label class="form-label">{{ __('Design Option') }} <span class="badge bg-success-lt ms-1">Bonus</span></label>
+                <div class="col-md-4">
+                    <label class="form-label">
+                        {{ __('Design Option') }}
+                        {{-- <span class="badge bg-success-lt ms-1"> --}}
+                            {{-- {{ __('Bonus') }} --}}
+                        {{-- </span> --}}
+                    </label>
                     <select name="design_option" class="form-select">
                         <option value="">{{ __('All Options') }}</option>
                         @foreach($designOptions ?? [] as $option)
                             <option value="{{ $option->id }}" {{ request('design_option') == $option->id ? 'selected' : '' }}>
                                 {{ $option->getTranslation('name', app()->getLocale()) }}
+                                ({{ __(ucwords(str_replace('_', ' ', $option->type))) }})
                             </option>
                         @endforeach
                     </select>
                 </div>
 
                 {{-- Submit --}}
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">&nbsp;</label>
-                    <div class="btn-group w-100" role="group">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="ti ti-filter"></i> {{ __('Filter') }}
-                        </button>
-                        @if(request()->hasAny(['search', 'user', 'size', 'min_price', 'max_price', 'design_option']))
-                            <a href="{{ route('admin.designs.index') }}" class="btn btn-secondary">
-                                <i class="ti ti-x"></i>
-                            </a>
-                        @endif
-                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="ti ti-search"></i> {{ __('Search') }}
+                    </button>
                 </div>
+
+                {{-- Clear Filters --}}
+                @if(request()->hasAny(['search', 'user', 'size', 'min_price', 'max_price', 'design_option']))
+                <div class="col-12">
+                    <a href="{{ route('admin.designs.index') }}" class="btn btn-secondary">
+                        <i class="ti ti-x"></i> {{ __('Clear All Filters') }}
+                    </a>
+                </div>
+                @endif
             </form>
         </div>
     </div>
+
+    {{-- Results Info --}}
+    @if(request()->hasAny(['search', 'user', 'size', 'min_price', 'max_price', 'design_option']))
+    <div class="alert alert-info mb-3">
+        <div class="d-flex">
+            <div>
+                <i class="ti ti-info-circle icon alert-icon"></i>
+            </div>
+            <div>
+                <h4 class="alert-title">{{ __('Search Results') }}</h4>
+                <div class="text-secondary">
+                    {{ __('Found :count design(s) matching your criteria', ['count' => $designs->total()]) }}
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 
     {{-- Designs Grid --}}
     <div class="row row-cards">
@@ -193,12 +225,12 @@
 
                     {{-- Description --}}
                     <p class="text-muted">
-                        {{ Str::limit($design->getTranslation('description', app()->getLocale()), 100) }}
+                        {{ Str::limit($design->getTranslation('description', app()->getLocale()), 80) }}
                     </p>
 
                     {{-- Price --}}
                     <div class="d-flex align-items-center mb-2">
-                        <div class="h3 mb-0 text-primary">{{ number_format($design->price, 2) }} {{ __('SYP') }}</div>
+                        <div class="h3 mb-0 text-primary">{{ number_format($design->price, 0) }} {{ __('SYP') }}</div>
                     </div>
 
                     {{-- Sizes --}}
@@ -209,6 +241,13 @@
                                 <span class="badge bg-secondary-lt me-1">{{ $measurement->size }}</span>
                             @endforeach
                         </div>
+                    </div>
+
+                    {{-- Images Count --}}
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="ti ti-photo"></i> {{ $design->images->count() }} {{ __('image(s)') }}
+                        </small>
                     </div>
 
                     {{-- Creator Info --}}
@@ -234,7 +273,7 @@
                         </div>
                         <div class="col-auto">
                             <a href="{{ route('admin.designs.show', $design) }}" class="btn btn-primary btn-sm">
-                                {{ __('View') }}
+                                <i class="ti ti-eye"></i> {{ __('View') }}
                             </a>
                         </div>
                     </div>
@@ -251,8 +290,19 @@
                         </div>
                         <p class="empty-title">{{ __('No designs found') }}</p>
                         <p class="empty-subtitle text-muted">
-                            {{ __('Try adjusting your search or filter criteria.') }}
+                            @if(request()->hasAny(['search', 'user', 'size', 'min_price', 'max_price', 'design_option']))
+                                {{ __('Try adjusting your search or filter criteria.') }}
+                            @else
+                                {{ __('No designs have been created yet.') }}
+                            @endif
                         </p>
+                        @if(request()->hasAny(['search', 'user', 'size', 'min_price', 'max_price', 'design_option']))
+                        <div class="empty-action">
+                            <a href="{{ route('admin.designs.index') }}" class="btn btn-primary">
+                                <i class="ti ti-x"></i> {{ __('Clear Filters') }}
+                            </a>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -263,7 +313,16 @@
     {{-- Pagination --}}
     @if($designs->hasPages())
     <div class="d-flex mt-4">
-        <ul class="pagination ms-auto">
+        <p class="m-0 text-muted me-auto">
+            {{ __('Showing') }}
+            <span>{{ $designs->firstItem() }}</span>
+            {{ __('to') }}
+            <span>{{ $designs->lastItem() }}</span>
+            {{ __('of') }}
+            <span>{{ $designs->total() }}</span>
+            {{ __('entries') }}
+        </p>
+        <ul class="pagination m-0 ms-auto">
             {{ $designs->links() }}
         </ul>
     </div>

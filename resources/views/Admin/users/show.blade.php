@@ -22,6 +22,14 @@
                 </a>
                 @endcan
 
+
+
+                @if(auth()->user()->role === 'super_admin')
+                <a href="{{ route('admin.users.permissions.edit', $user) }}" class="btn btn-info">
+                    <i class="ti ti-lock-access"></i> {{ __('Manage Permissions') }}
+                </a>
+                @endif
+
                 @can('activate users')
                 <form method="POST" action="{{ route('admin.users.toggle-status', $user) }}" class="d-inline">
                     @csrf

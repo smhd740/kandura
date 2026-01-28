@@ -28,7 +28,7 @@ class StoreCouponRequest extends FormRequest
                 'regex:/^[A-Z0-9-_]+$/i', // حروف وأرقام وشرطة وشرطة سفلية فقط
                 'unique:coupons,code',
             ],
-
+            'one_time_per_user' => 'nullable|boolean',
             // Discount Type & Amount
             'discount_type' => 'required|in:percentage,fixed',
             'amount' => [
@@ -60,7 +60,7 @@ class StoreCouponRequest extends FormRequest
             'min_order_amount' => 'nullable|numeric|min:0',
 
             // Status
-            'is_active' => 'boolean',
+            'is_active' => 'nullable'|'boolean',
 
             // User Specific
             'is_user_specific' => 'boolean',
