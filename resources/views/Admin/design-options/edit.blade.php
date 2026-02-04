@@ -89,7 +89,7 @@
                         <div id="imagePreview" class="mt-3"></div>
                     </div>
 
-                    {{-- Status --}}
+                    {{-- Status
                     <div class="mb-3">
                         <label class="form-check form-switch">
                             <input class="form-check-input"
@@ -102,7 +102,7 @@
                         <small class="form-hint text-muted">
                             {{ __('Inactive options will not be visible to users') }}
                         </small>
-                    </div>
+                    </div> --}}
 
                     <hr>
 

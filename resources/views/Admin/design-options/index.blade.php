@@ -209,6 +209,16 @@
                                         <i class="ti ti-edit"></i>
                                     </a>
 
+                                    <form method="POST" action="{{ route('admin.design-options.toggle-status', $option) }}" class="d-inline">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit"
+                                                class="btn btn-sm btn-{{ $option->is_active ? 'warning' : 'success' }}"
+                                                title="{{ $option->is_active ? __('Deactivate') : __('Activate') }}">
+                                            <i class="ti ti-{{ $option->is_active ? 'ban' : 'check' }}"></i>
+                                        </button>
+                                    </form>
+
                                     <form method="POST" action="{{ route('admin.design-options.destroy', $option) }}" class="d-inline">
                                         @csrf
                                         @method('DELETE')
@@ -222,7 +232,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="text-center py-5">
+                            <td colspan="6" class="text-center py-5">
                                 <div class="empty">
                                     <div class="empty-icon">
                                         <i class="ti ti-palette"></i>

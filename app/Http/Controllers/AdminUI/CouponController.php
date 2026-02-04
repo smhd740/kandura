@@ -5,8 +5,8 @@ namespace App\Http\Controllers\AdminUI;
 use App\Models\User;
 use App\Models\Coupon;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreCouponRequest;
-use App\Http\Requests\UpdateCouponRequest;
+use App\Http\Requests\Admin\StoreCouponRequest;
+use App\Http\Requests\Admin\UpdateCouponRequest;
 
 class CouponController extends Controller
 {
@@ -51,7 +51,10 @@ class CouponController extends Controller
     $data = $request->validated();
 
     // Handle checkbox - if not checked, set to false
-    $data['is_active'] = $request->has('is_active') ? true : false;
+   // $data['is_active'] = $request->has('is_active') ? true : false;
+
+    $data['is_active'] = filter_var($request->input('is_active', false), FILTER_VALIDATE_BOOLEAN);
+    $data['one_time_per_user'] = filter_var($request->input('one_time_per_user', false), FILTER_VALIDATE_BOOLEAN);
 
     $coupon = Coupon::create($data);
 

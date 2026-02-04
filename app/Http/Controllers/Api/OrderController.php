@@ -9,7 +9,7 @@ use App\Http\Resources\OrderResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-
+use App\Events\OrderCreated;
 class OrderController extends Controller
 {
     use AuthorizesRequests;
@@ -35,6 +35,8 @@ class OrderController extends Controller
                 $request->validated(),
                 auth()->id()
             );
+
+            event(new OrderCreated($order));
 
             return response()->json([
                 'success' => true,

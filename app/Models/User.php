@@ -55,6 +55,19 @@ class User extends Authenticatable
             'deleted_at' => 'datetime',
         ];
     }
+
+    /**
+ * The "booted" method of the model.
+ */
+protected static function booted(): void
+{
+    static::created(function ($user) {
+        // إنشاء محفظة تلقائياً لكل user جديد بقيمة 0
+        if ($user->role === 'user') {
+            $user->wallet()->create(['amount' => 0]);
+        }
+    });
+}
     public function addresses()
     {
         return $this->hasMany(Address::class);
@@ -165,7 +178,10 @@ public function couponUsages()
     return $this->hasMany(CouponUsage::class);
 }
 
-
+    public function deviceTokens()
+{
+    return $this->hasMany(DeviceToken::class);
+}
 
 // public function getRoleAttribute()
 // {

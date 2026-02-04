@@ -118,6 +118,35 @@
                     @error('max_usage')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
+
+                <!-- Active Status -->
+<div class="mb-3 form-check form-switch">
+    <input type="checkbox"
+           name="is_active"
+           value="1"
+           class="form-check-input"
+           id="is_active"
+           @checked(old('is_active', $coupon->is_active))>
+    <label class="form-check-label" for="is_active">
+        {{ __('Active Coupon') }}
+    </label>
+</div>
+
+<!-- One Time Per User -->
+<div class="mb-3 form-check">
+    <input type="checkbox"
+           name="one_time_per_user"
+           value="1"
+           class="form-check-input"
+           id="one_time_per_user"
+           @checked(old('one_time_per_user', $coupon->one_time_per_user))>
+    <label class="form-check-label" for="one_time_per_user">
+        {{ __('One time per user') }}
+    </label>
+</div>
+
+
+
                 <!-- User Specific Checkbox -->
                 <div class="mb-3 form-check">
                     <input type="checkbox"

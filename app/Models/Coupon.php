@@ -84,11 +84,13 @@ class Coupon extends Model
      */
     public function scopeValid($query)
     {
+        $now = now()->format('Y-m-d H:i'); // بدون ثواني
+
         return $query->where('is_active', true)
-            ->where('expires_at', '>', now())
-            ->where(function ($q) {
+            ->whereRaw("DATE_FORMAT(expires_at, '%Y-%m-%d %H:%i') >= ?", [$now])
+            ->where(function ($q) use ($now) {
                 $q->whereNull('starts_at')
-                    ->orWhere('starts_at', '<=', now());
+                    ->orWhereRaw("DATE_FORMAT(starts_at, '%Y-%m-%d %H:%i') <= ?", [$now]);
             });
     }
 
@@ -96,13 +98,13 @@ class Coupon extends Model
      * Scope: Available coupons (valid + has remaining uses)
      */
     public function scopeAvailable($query)
-{
-    return $query->valid()
-        ->where(function ($q) {
-            $q->whereNull('max_usage')
-            ->orWhereColumn('used_count', '<', 'max_usage');
-        });
-}
+    {
+        return $query->valid()
+            ->where(function ($q) {
+                $q->whereNull('max_usage')
+                    ->orWhereColumn('used_count', '<', 'max_usage');
+            });
+    }
 
 
     /**
@@ -133,39 +135,40 @@ class Coupon extends Model
     /**
      * Scope: Filter by status
      */
- public function scopeByStatus($query, $status)
-{
-    if (empty($status)) {
-        return $query;
-    }
-
-    switch ($status) {
-        case 'active':
-            // Active = مفعل + لم تنتهِ صلاحيته + لم يستخدم كامل مرات الاستخدام
-            return $query->where('is_active', true)
-                         ->where(function($q) {
-                             $q->whereNull('expires_at')
-                               ->orWhere('expires_at', '>', now());
-                         })
-                         ->where(function($q) {
-                             $q->whereNull('max_usage')
-                               ->orWhereColumn('used_count', '<', 'max_usage');
-                         });
-
-        case 'inactive':
-            // Inactive = غير مفعل فقط
-            return $query->where('is_active', false);
-
-        case 'expired':
-            return $query->where('expires_at', '<', now());
-
-        case 'used_up':
-            return $query->whereColumn('used_count', '>=', 'max_usage');
-
-        default:
+    public function scopeByStatus($query, $status)
+    {
+        if (empty($status)) {
             return $query;
+        }
+
+        $now = now()->format('Y-m-d H:i');
+
+        switch ($status) {
+            case 'active':
+                return $query->where('is_active', true)
+                    ->whereRaw("DATE_FORMAT(expires_at, '%Y-%m-%d %H:%i') >= ?", [$now])
+                    ->where(function ($q) use ($now) {
+                        $q->whereNull('starts_at')
+                            ->orWhereRaw("DATE_FORMAT(starts_at, '%Y-%m-%d %H:%i') <= ?", [$now]);
+                    })
+                    ->where(function ($q) {
+                        $q->whereNull('max_usage')
+                            ->orWhereColumn('used_count', '<', 'max_usage');
+                    });
+
+            case 'inactive':
+                return $query->where('is_active', false);
+
+            case 'expired':
+                return $query->whereRaw("DATE_FORMAT(expires_at, '%Y-%m-%d %H:%i') < ?", [$now]);
+
+            case 'used_up':
+                return $query->whereColumn('used_count', '>=', 'max_usage');
+
+            default:
+                return $query;
+        }
     }
-}
 
 
 
@@ -192,7 +195,7 @@ class Coupon extends Model
             return false;
         }
 
-        $now = now();
+        $now = now()->startOfMinute();
 
         // Check if expired
         if ($this->expires_at && $this->expires_at < $now) {
@@ -210,14 +213,26 @@ class Coupon extends Model
     /**
      * Check if coupon has remaining uses
      */
-    public function hasRemainingUses(): bool
-{
-    if (is_null($this->max_usage)) {
-        return true; // استخدام غير محدود
-    }
+    //     public function hasRemainingUses(): bool
+    // {
+    //     if (is_null($this->max_usage)) {
+    //         return true; // استخدام غير محدود
+    //     }
 
-    return $this->used_count < $this->max_usage;
-}
+    //     return $this->used_count < $this->max_usage;
+    // }
+
+
+    public function hasRemainingUses(): bool
+    {
+        $used = $this->used_count ?? 0;
+
+        if (is_null($this->max_usage)) {
+            return true;
+        }
+
+        return $used < $this->max_usage;
+    }
 
 
     /**
@@ -272,26 +287,26 @@ class Coupon extends Model
      * Calculate discount amount for a given order total
      */
     public function calculateDiscount(float $orderAmount): float
-{
-    if ($this->discount_type === 'percentage') {
-        $discount = ($orderAmount * $this->amount) / 100;
-    } else {
-        $discount = $this->amount;
-    }
+    {
+        if ($this->discount_type === 'percentage') {
+            $discount = ($orderAmount * $this->amount) / 100;
+        } else {
+            $discount = $this->amount;
+        }
 
-    // ❌ الخصم أكبر أو يساوي سعر الطلب
-    if ($discount >= $orderAmount) {
-        throw ValidationException::withMessages([
-            'coupon_code' => [
-                app()->getLocale() === 'ar'
-                    ? 'قيمة الخصم يجب أن تكون أقل من قيمة الطلب'
-                    : 'Discount amount must be less than order total',
-            ],
-        ]);
-    }
+        // ❌ الخصم أكبر أو يساوي سعر الطلب
+        if ($discount >= $orderAmount) {
+            throw ValidationException::withMessages([
+                'coupon_code' => [
+                    app()->getLocale() === 'ar'
+                        ? 'قيمة الخصم يجب أن تكون أقل من قيمة الطلب'
+                        : 'Discount amount must be less than order total',
+                ],
+            ]);
+        }
 
-    return round($discount, 2);
-}
+        return round($discount, 2);
+    }
 
     /**
      * Increment usage count
@@ -332,58 +347,56 @@ class Coupon extends Model
     }
 
     /**
- * Is coupon active (used in admin views)
- */
-// public function isActive(): bool
-// {
-//     return $this->isValid() && $this->hasRemainingUses();
-// }
+     * Is coupon active (used in admin views)
+     */
+    // public function isActive(): bool
+    // {
+    //     return $this->isValid() && $this->hasRemainingUses();
+    // }
 
-// /**
-//  * Is coupon expired
-//  */
+    // /**
+    //  * Is coupon expired
+    //  */
 
-// public function isExpired(): bool
-// {
-//     return $this->expires_at !== null && now()->gt($this->expires_at);
-// }
+    // public function isExpired(): bool
+    // {
+    //     return $this->expires_at !== null && now()->gt($this->expires_at);
+    // }
 
-// /**
-//  * Is coupon fully used
-//  */
-// public function isFullyUsed(): bool
-// {
-//     if (is_null($this->max_usage)) {
-//         return false;
-//     }
+    // /**
+    //  * Is coupon fully used
+    //  */
+    // public function isFullyUsed(): bool
+    // {
+    //     if (is_null($this->max_usage)) {
+    //         return false;
+    //     }
 
-//     return $this->used_count >= $this->max_usage;
-// }
+    //     return $this->used_count >= $this->max_usage;
+    // }
 
 
-public function isActive(): bool
-{
-    return $this->is_active && ! $this->isExpired() && ! $this->isFullyUsed();
-}
-
-public function isInactive(): bool
-{
-    return ! $this->is_active;
-}
-
-public function isExpired(): bool
-{
-    return $this->expires_at !== null && now()->gt($this->expires_at);
-}
-
-public function isFullyUsed(): bool
-{
-    if (is_null($this->max_usage)) {
-        return false;
+    public function isActive(): bool
+    {
+        return $this->is_active && ! $this->isExpired() && ! $this->isFullyUsed();
     }
 
-    return $this->used_count >= $this->max_usage;
-}
+    public function isInactive(): bool
+    {
+        return ! $this->is_active;
+    }
 
+    public function isExpired(): bool
+    {
+        return $this->expires_at !== null && now()->gt($this->expires_at);
+    }
 
+    public function isFullyUsed(): bool
+    {
+        if (is_null($this->max_usage)) {
+            return false;
+        }
+
+        return $this->used_count >= $this->max_usage;
+    }
 }

@@ -11,7 +11,7 @@
                 </a>
             </div>
             <h2 class="page-title">
-                <i class="ti ti-user-plus"></i> {{ __('Create New User') }}
+                <i class="ti ti-user-plus"></i> {{ __('Create New Admin') }}
             </h2>
         </div>
     </div>
@@ -24,7 +24,7 @@
                 @csrf
 
                 <div class="card-header">
-                    <h3 class="card-title">{{ __('User Information') }}</h3>
+                    <h3 class="card-title">{{ __('Admin Information') }}</h3>
                 </div>
 
                 <div class="card-body">
@@ -93,37 +93,61 @@
 
                     <h4 class="mb-3">{{ __('Account Settings') }}</h4>
 
-                   <!-- Role -->
-<div class="mb-3">
-    <label class="form-label required">{{ __('Role') }}</label>
-    <select name="role" class="form-select @error('role') is-invalid @enderror" required>
-        <option value="">{{ __('Select role...') }}</option>
+                    <!-- Base Role -->
+                    <div class="mb-3">
+                        <label class="form-label required">{{ __('Base Role') }}</label>
+                        <select name="role" id="base-role" class="form-select @error('role') is-invalid @enderror" required>
+                            <option value="">{{ __('Select base role...') }}</option>
 
-        @foreach(\Spatie\Permission\Models\Role::orderBy('name')->get() as $role)
-            @if($role->name !== 'super_admin' || auth()->user()->role === 'super_admin')
-                <option value="{{ $role->name }}" {{ old('role') == $role->name ? 'selected' : '' }}>
-                    {{ __(ucfirst(str_replace('_', ' ', $role->name))) }}
-                </option>
-            @endif
-        @endforeach
+                            @if(auth()->user()->role === 'super_admin')
+                                <option value="super_admin" {{ old('role') == 'super_admin' ? 'selected' : '' }}>{{ __('Super Admin') }}</option>
+                                <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>{{ __('Admin') }}</option>
+                            @endif
 
-    </select>
+                            {{-- <option value="user" {{ old('role') == 'user' ? 'selected' : '' }}>{{ __('User') }}</option>
+                            <option value="guest" {{ old('role') == 'guest' ? 'selected' : '' }}>{{ __('Guest') }}</option> --}}
 
-    @error('role')
-        <div class="invalid-feedback d-block">{{ $message }}</div>
-    @enderror
+                            {{-- <option value="super_admin" {{ old('role') == 'super_admin' ? 'selected' : '' }}>{{ __('Super Admin') }}</option> --}}
+{{-- <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>{{ __('Admin') }}</option> --}}
 
-    <small class="form-hint">
-        <i class="ti ti-info-circle"></i>
-        @foreach(\Spatie\Permission\Models\Role::orderBy('name')->get() as $role)
-            @if($role->name !== 'super_admin' || auth()->user()->role === 'super_admin')
-                <strong>{{ __(ucfirst(str_replace('_', ' ', $role->name))) }}:</strong>
-                {{ __('Role permissions depend on system configuration') }}<br>
-            @endif
-        @endforeach
-    </small>
-</div>
+                        </select>
+                        @error('role')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
 
+                        @if(auth()->user()->role !== 'super_admin')
+                            <small class="form-hint text-muted">
+                                <i class="ti ti-info-circle"></i>
+                                {{ __('Only Super Admin can create Admin accounts') }}
+                            </small>
+                        @endif
+                    </div>
+
+                    <!-- Admin Specific Role (يظهر فقط للسوبر أدمن لما يختار admin) -->
+                    @if(auth()->user()->role === 'super_admin')
+                    <div class="mb-3" id="admin-role-section" style="display: none;">
+                        <label class="form-label">{{ __('Admin Specific Role') }}</label>
+                        <select name="admin_role" class="form-select @error('admin_role') is-invalid @enderror">
+                            <option value="">{{ __('General Admin (No specific role)') }}</option>
+                            @foreach(\Spatie\Permission\Models\Role::whereNotIn('name', ['super_admin', 'admin', 'user', 'guest'])->orderBy('name')->get() as $spatieRole)
+                                <option value="{{ $spatieRole->name }}" {{ old('admin_role') == $spatieRole->name ? 'selected' : '' }}>
+                                    {{ __(ucfirst(str_replace('_', ' ', $spatieRole->name))) }}
+                                    @if($spatieRole->permissions->count() > 0)
+                                        ({{ $spatieRole->permissions->count() }} {{ __('permissions') }})
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('admin_role')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                        <small class="form-hint">
+                            <i class="ti ti-info-circle"></i>
+                            {{ __('Select a specific admin role with predefined permissions. You can create new roles from') }}
+                            <a href="{{ route('admin.roles.index') }}" target="_blank">{{ __('Roles Management') }}</a>
+                        </small>
+                    </div>
+                    @endif
 
                     <!-- Active Status -->
                     <div class="mb-3">
@@ -136,9 +160,9 @@
                         </small>
                     </div>
 
-                    <hr class="my-4">
+                    {{-- <hr class="my-4"> --}}
 
-                    <h4 class="mb-3">{{ __('Password') }}</h4>
+                    {{-- <h4 class="mb-3">{{ __('Password') }}</h4> --}}
 
                     <!-- Password -->
                     <div class="mb-3">
@@ -193,7 +217,7 @@
                             {{ __('Cancel') }}
                         </a>
                         <button type="submit" class="btn btn-primary ms-auto">
-                            <i class="ti ti-user-plus"></i> {{ __('Create User') }}
+                            <i class="ti ti-user-plus"></i> {{ __('Create Admin') }}
                         </button>
                     </div>
                 </div>
@@ -204,9 +228,28 @@
 
 @push('scripts')
 <script>
-    // Toggle password visibility
     document.addEventListener('DOMContentLoaded', function() {
-        // You can add password strength checker here if needed
+        const baseRoleSelect = document.getElementById('base-role');
+        const adminRoleSection = document.getElementById('admin-role-section');
+
+        // Show/hide admin role section based on base role selection
+        function toggleAdminRoleSection() {
+            if (baseRoleSelect && adminRoleSection) {
+                if (baseRoleSelect.value === 'admin') {
+                    adminRoleSection.style.display = 'block';
+                } else {
+                    adminRoleSection.style.display = 'none';
+                }
+            }
+        }
+
+        // Initial check
+        toggleAdminRoleSection();
+
+        // Listen for changes
+        if (baseRoleSelect) {
+            baseRoleSelect.addEventListener('change', toggleAdminRoleSection);
+        }
     });
 </script>
 @endpush

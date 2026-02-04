@@ -11,36 +11,73 @@ use Spatie\Permission\PermissionRegistrar;
 
 class UserPermissionController extends Controller
 {
+
+
+
+
+    public function edit(User $user)
+{
+    // Get all roles
+    $roles = Role::orderBy('name')->get();
+
+    // Get all permissions grouped by module
+    $allPermissions = Permission::orderBy('name')->get();
+    $permissions = $allPermissions->groupBy(function($permission) {
+        $parts = explode(' ', $permission->name);
+        return $parts[1] ?? 'other';
+    });
+
+    // Get user's current role (Spatie role if exists, otherwise base role)
+    $userRole = $user->roles->first() ?: Role::where('name', $user->role)->first();
+
+    // Get user's direct permissions
+    $userPermissions = $user->getDirectPermissions()->pluck('id')->toArray();
+
+    // Get role permissions
+    $userRolePermissions = $userRole ? $userRole->permissions->pluck('id')->toArray() : [];
+
+    return view('admin.user-permissions.edit', compact(
+        'user',
+        'roles',
+        'permissions',
+        'allPermissions',
+        'userRole',
+        'userPermissions',
+        'userRolePermissions'
+    ));
+}
+
+
     /**
      * Show the form for editing user permissions
      */
-    public function edit(User $user)
-    {
-        // Get all roles
-        $roles = Role::orderBy('name')->get();
+    // public function edit(User $user)
+    // {
+    //     // Get all roles
+    //     $roles = Role::orderBy('name')->get();
 
-        // Get all permissions grouped by module
-        $allPermissions = Permission::orderBy('name')->get();
-        $permissions = $allPermissions->groupBy(function($permission) {
-            $parts = explode(' ', $permission->name);
-            return $parts[1] ?? 'other';
-        });
+    //     // Get all permissions grouped by module
+    //     $allPermissions = Permission::orderBy('name')->get();
+    //     $permissions = $allPermissions->groupBy(function($permission) {
+    //         $parts = explode(' ', $permission->name);
+    //         return $parts[1] ?? 'other';
+    //     });
 
-        // Get user's current role and permissions
-        $userRole = $user->roles->first();
-        $userPermissions = $user->permissions->pluck('id')->toArray();
-        $userRolePermissions = $userRole ? $userRole->permissions->pluck('id')->toArray() : [];
+    //     // Get user's current role and permissions
+    //     $userRole = $user->roles->first();
+    //     $userPermissions = $user->permissions->pluck('id')->toArray();
+    //     $userRolePermissions = $userRole ? $userRole->permissions->pluck('id')->toArray() : [];
 
-        return view('admin.user-permissions.edit', compact(
-            'user',
-            'roles',
-            'permissions',
-            'allPermissions',
-            'userRole',
-            'userPermissions',
-            'userRolePermissions'
-        ));
-    }
+    //     return view('admin.user-permissions.edit', compact(
+    //         'user',
+    //         'roles',
+    //         'permissions',
+    //         'allPermissions',
+    //         'userRole',
+    //         'userPermissions',
+    //         'userRolePermissions'
+    //     ));
+    // }
 
     /**
      * Update user permissions
@@ -95,32 +132,32 @@ public function update(Request $request, User $user)
         'permissions.*' => 'exists:permissions,id',
     ]);
 
-    // 1️⃣ تحديث حقل role بالـ enum أو string
-    $user->update(['role' => $validated['role']]);
-
-    // 2️⃣ مزامنة Role مع Spatie
-    $user->syncRoles([$validated['role']]);
+    // 1️⃣ تحديث base role ONLY إذا كان base role (super_admin, admin, user, guest)
+    if (in_array($validated['role'], ['super_admin', 'admin', 'user', 'guest'])) {
+        $user->update(['role' => $validated['role']]);
+        $user->syncRoles([$validated['role']]);
+    } else {
+        // 2️⃣ إذا كان sub-role، نخلي الـ base role كما هو ونغير الـ Spatie role فقط
+        $user->syncRoles([$validated['role']]);
+    }
 
     // 3️⃣ مزامنة Permissions مباشرة
     if (!empty($validated['permissions'])) {
-        // جلب Permissions كـ Model مع التأكد من guard
         $permissions = Permission::whereIn('id', $validated['permissions'])
             ->where('guard_name', 'web')
             ->get();
 
         $user->syncPermissions($permissions);
     } else {
-        // تفريغ كل Permissions المباشرة
         $user->syncPermissions([]);
     }
 
-    // 4️⃣ تفريغ Cache بعد أي تعديل
+    // 4️⃣ تفريغ Cache
     app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
     return redirect()
         ->route('admin.users.show', $user)
         ->with('success', __('User permissions updated successfully'));
 }
-
 
 }

@@ -169,30 +169,26 @@
                     </div>
                 </div>
 
-                {{-- Flags --}}
-                <div class="row">
-                    <div class="col-md-6">
-                        <label class="form-check form-switch">
-                           <input class="form-check-input" type="checkbox" name="is_active" value="1"
-       {{ old('is_active', '1') == '1' ? 'checked' : '' }}>
+               {{-- Flags --}}
+<div class="row">
+    <div class="col-md-6">
+        <label class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" name="is_active" value="1" checked>
+            <span class="form-check-label fw-semibold">
+                Active Coupon
+            </span>
+        </label>
+    </div>
 
-                            <span class="form-check-label fw-semibold">
-                                Active Coupon
-                            </span>
-                        </label>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="one_time_per_user" value="1">
-                            <span class="form-check-label fw-semibold">
-                                One time per user
-                            </span>
-                        </label>
-                    </div>
-                </div>
-
-            </div>
+    <div class="col-md-6">
+        <label class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" name="one_time_per_user" value="1">
+            <span class="form-check-label fw-semibold">
+                One time per user
+            </span>
+        </label>
+    </div>
+</div>
 
             {{-- Footer --}}
             <div class="card-footer bg-light d-flex justify-content-between">

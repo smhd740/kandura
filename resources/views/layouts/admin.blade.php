@@ -224,6 +224,10 @@
         }
     </style>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
+
     @stack('styles')
 </head>
 <body>
@@ -351,29 +355,38 @@
                         @endif
 
                         <!-- Roles & Permissions (Super Admin Only) -->
-                        @if(auth()->user()->role === 'super_admin')
-                        <li class="nav-item">
-                            <div class="hr-text my-3">{{ __('Access Control') }}</div>
-                        </li>
+@if(auth()->user()->role === 'super_admin')
+<li class="nav-item">
+    <div class="hr-text my-3">{{ __('Access Control') }}</div>
+</li>
 
-                        <li class="nav-item {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
-                            <a class="nav-link" href="{{ route('admin.roles.index') }}">
-                                <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                    <i class="ti ti-shield-lock fs-2"></i>
-                                </span>
-                                <span class="nav-link-title">{{ __('Roles') }}</span>
-                            </a>
-                        </li>
+<li class="nav-item {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
+    <a class="nav-link" href="{{ route('admin.roles.index') }}">
+        <span class="nav-link-icon d-md-none d-lg-inline-block">
+            <i class="ti ti-shield-lock fs-2"></i>
+        </span>
+        <span class="nav-link-title">{{ __('Roles') }}</span>
+    </a>
+</li>
 
-                        <li class="nav-item {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
-                            <a class="nav-link" href="{{ route('admin.permissions.index') }}">
-                                <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                    <i class="ti ti-key fs-2"></i>
-                                </span>
-                                <span class="nav-link-title">{{ __('Permissions') }}</span>
-                            </a>
-                        </li>
-                        @endif
+<li class="nav-item {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
+    <a class="nav-link" href="{{ route('admin.permissions.index') }}">
+        <span class="nav-link-icon d-md-none d-lg-inline-block">
+            <i class="ti ti-key fs-2"></i>
+        </span>
+        <span class="nav-link-title">{{ __('Permissions') }}</span>
+    </a>
+</li>
+
+<li class="nav-item {{ request()->routeIs('admin.users.create') ? 'active' : '' }}">
+    <a class="nav-link" href="{{ route('admin.users.create') }}">
+        <span class="nav-link-icon d-md-none d-lg-inline-block">
+            <i class="ti ti-user-plus fs-2"></i>
+        </span>
+        <span class="nav-link-title">{{ __('Create Admin') }}</span>
+    </a>
+</li>
+@endif
 
 
 
@@ -629,5 +642,150 @@
     </script>
 
     @stack('scripts')
+
+    <!-- Firebase Notifications -->
+<script>
+console.log('🔥 Firebase script starting...');
+
+// Firebase Configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyA-JUGF6cA5c_c_CMvh2X-deEyeP_WlxWk",
+    authDomain: "kandura-store-notifications.firebaseapp.com",
+    projectId: "kandura-store-notifications",
+    storageBucket: "kandura-store-notifications.firebasestorage.app",
+    messagingSenderId: "845537116493",
+    appId: "1:845537116493:web:1e31619cb1f4d5e1863704",
+    measurementId: "G-D7FR13Z75C"
+};
+
+// Initialize Firebase
+try {
+    firebase.initializeApp(firebaseConfig);
+    console.log('✅ Firebase initialized');
+} catch (error) {
+    console.error('❌ Firebase init error:', error);
+}
+
+const messaging = firebase.messaging();
+const VAPID_KEY = 'BJZZNUEPjd09mmI2cqB43iyk0cpfF3P2TXX3iBUaYKRAWdJAR-XOtgvw-CM6KsXrU1sjvOzoLtSyRZhD3Tw7H14';
+
+@php
+$token = auth()->user()->createToken('browser-' . time());
+@endphp
+const authToken = '{{ $token->plainTextToken }}';
+localStorage.setItem('auth_token', authToken);
+
+// Request permission and get token
+function enableNotifications() {
+    console.log('📢 Requesting notification permission...');
+
+    Notification.requestPermission().then((permission) => {
+        console.log('Permission result:', permission);
+
+        if (permission === 'granted') {
+            console.log('✅ Permission granted! Getting FCM token...');
+
+            messaging.getToken({ vapidKey: VAPID_KEY })
+                .then((currentToken) => {
+                    if (currentToken) {
+                        console.log('✅ FCM Token:', currentToken);
+                        saveTokenToBackend(currentToken);
+                    } else {
+                        console.log('❌ No FCM token available');
+                    }
+                })
+                .catch((err) => {
+                    console.error('❌ Error getting token:', err);
+                });
+        } else {
+            console.log('❌ Permission denied');
+        }
+    });
+}
+
+// Save token to backend
+function saveTokenToBackend(token) {
+    console.log('💾 Saving token to backend...');
+
+    fetch('/api/device-tokens', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + authToken,
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({
+            token: token,
+            device_type: 'web',
+            device_name: 'Admin Dashboard'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('✅ Token saved:', data);
+    })
+    .catch(err => console.error('❌ Save error:', err));
+}
+
+// Handle foreground messages
+// Handle foreground messages
+messaging.onMessage((payload) => {
+    console.log('📬 Foreground message received:', payload);
+
+    const notificationTitle = payload.notification?.title || 'New Notification';
+    const notificationOptions = {
+        body: payload.notification?.body || '',
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        data: payload.data || {}
+    };
+
+    // Show notification in foreground
+    const notification = new Notification(notificationTitle, notificationOptions);
+
+    // Handle click
+    notification.onclick = function(event) {
+        event.preventDefault();
+        const data = payload.data || {};
+        const type = data.type;
+        let url = '/dashboard';
+
+        if (type === 'new_order_admin' || type === 'new_order_user') {
+            const orderId = data.order_id;
+            url = orderId ? `/admin/orders/${orderId}` : '/admin/orders';
+        } else if (type === 'design_created') {
+            const designId = data.design_id;
+            url = designId ? `/admin/designs/${designId}` : '/admin/designs';
+        } else if (type === 'order_status_changed') {
+            const orderId = data.order_id;
+            url = orderId ? `/admin/orders/${orderId}` : '/admin/orders';
+        }
+
+        window.location.href = url;
+        notification.close();
+    };
+});
+
+// Register Service Worker and enable notifications
+if ('serviceWorker' in navigator) {
+    console.log('🔧 Registering Service Worker...');
+
+    navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then((registration) => {
+            console.log('✅ Service Worker registered:', registration);
+
+            // Wait a bit then enable notifications
+            setTimeout(() => {
+                enableNotifications();
+            }, 1000);
+        })
+        .catch((err) => {
+            console.error('❌ Service Worker error:', err);
+        });
+} else {
+    console.log('❌ Service Worker not supported');
+}
+</script>
 </body>
 </html>

@@ -8,19 +8,7 @@
             <h2 class="page-title">
                 <i class="ti ti-users"></i> {{ __('Users Management') }}
             </h2>
-            <div class="text-muted mt-1">{{ __('View and manage all users') }}</div>
-        </div>
-        <div class="col-auto ms-auto">
-            <div class="btn-list">
-                @php
-                    $userRole = auth()->user()->role;
-                @endphp
-                @if($userRole === 'admin' || $userRole === 'super_admin')
-                <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
-                    <i class="ti ti-plus"></i> {{ __('Create User') }}
-                </a>
-                @endif
-            </div>
+            <div class="text-muted mt-1">{{ __('View and manage all users and admins') }}</div>
         </div>
     </div>
 @endsection
@@ -46,18 +34,17 @@
                 </div>
 
               <!-- Role Filter -->
-<div class="col-md-3">
-    <label class="form-label">{{ __('Role') }}</label>
-    <select name="role" class="form-select">
-        <option value="">{{ __('All Roles') }}</option>
-        @foreach(\Spatie\Permission\Models\Role::orderBy('name')->get() as $role)
-            <option value="{{ $role->name }}" {{ request('role') == $role->name ? 'selected' : '' }}>
-                {{ __(ucfirst(str_replace('_', ' ', $role->name))) }}
-            </option>
-        @endforeach
-    </select>
-</div>
-
+                <div class="col-md-3">
+                    <label class="form-label">{{ __('Role') }}</label>
+                    <select name="role" class="form-select">
+                        <option value="">{{ __('All Roles') }}</option>
+                        @foreach(\Spatie\Permission\Models\Role::orderBy('name')->get() as $role)
+                            <option value="{{ $role->name }}" {{ request('role') == $role->name ? 'selected' : '' }}>
+                                {{ __(ucfirst(str_replace('_', ' ', $role->name))) }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
 
                 <!-- Status Filter -->
                 <div class="col-md-3">
@@ -153,12 +140,18 @@
                                 <div class="text-muted"><small>{{ $user->phone }}</small></div>
                             </td>
 
-                            <!-- Role -->
-                            <td>
-                                <span class="badge bg-{{ $user->role == 'super_admin' ? 'red' : ($user->role == 'admin' ? 'blue' : 'secondary') }}">
-                                    {{ __(ucfirst(str_replace('_', ' ', $user->role))) }}
-                                </span>
-                            </td>
+                           <!-- Role -->
+<td>
+    <span class="badge bg-{{ $user->role == 'super_admin' ? 'red' : ($user->role == 'admin' ? 'blue' : 'secondary') }}">
+        {{ __(ucfirst(str_replace('_', ' ', $user->role))) }}
+    </span>
+    @if($user->roles->first() && !in_array($user->roles->first()->name, ['super_admin', 'admin', 'user', 'guest']))
+        <br>
+        <small class="text-muted">
+            {{ __(ucfirst(str_replace('_', ' ', $user->roles->first()->name))) }}
+        </small>
+    @endif
+</td>
 
                             <!-- Status -->
                             <td>
@@ -189,15 +182,16 @@
                                         <i class="ti ti-eye"></i>
                                     </a>
 
-                                    @can('edit users')
+                                    @if(auth()->user()->role === 'super_admin')
                                     <a href="{{ route('admin.users.edit', $user) }}"
                                        class="btn btn-sm btn-info"
                                        title="{{ __('Edit') }}">
                                         <i class="ti ti-edit"></i>
                                     </a>
-                                    @endcan
+                                    @endif
 
-                                    @can('activate users')
+                                    {{-- Toggle Status: Super Admin for all, Admin for users only --}}
+                                    @if(auth()->user()->role === 'super_admin' || $user->role === 'user')
                                     <form method="POST" action="{{ route('admin.users.toggle-status', $user) }}" class="d-inline">
                                         @csrf
                                         @method('PATCH')
@@ -207,10 +201,9 @@
                                             <i class="ti ti-{{ $user->is_active ? 'ban' : 'check' }}"></i>
                                         </button>
                                     </form>
-                                    @endcan
+                                    @endif
 
-                                    @can('delete users')
-                                    @if($user->id !== auth()->id())
+                                    @if(auth()->user()->role === 'super_admin' && $user->id !== auth()->id())
                                     <form method="POST" action="{{ route('admin.users.destroy', $user) }}" class="d-inline">
                                         @csrf
                                         @method('DELETE')
@@ -222,7 +215,6 @@
                                         </button>
                                     </form>
                                     @endif
-                                    @endcan
                                 </div>
                             </td>
                         </tr>

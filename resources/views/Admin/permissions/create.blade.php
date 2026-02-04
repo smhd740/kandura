@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+{{-- @extends('layouts.admin')
 
 @section('title', __('Create New Permission'))
 
@@ -153,4 +153,4 @@
         }
     });
 </script>
-@endpush
+@endpush --}}

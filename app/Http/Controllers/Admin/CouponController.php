@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreCouponRequest;
-use App\Http\Requests\UpdateCouponRequest;
+use App\Http\Requests\Admin\StoreCouponRequest;
+use App\Http\Requests\Admin\UpdateCouponRequest;
 use App\Http\Resources\Admin\CouponResource;
 use App\Models\Coupon;
 use App\Services\CouponService;

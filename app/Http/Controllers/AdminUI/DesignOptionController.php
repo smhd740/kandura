@@ -162,4 +162,23 @@ class DesignOptionController extends Controller
             ->route('admin.design-options.index')
             ->with('success', __('Design option deleted successfully!'));
     }
+
+
+    /**
+ * Toggle design option active status
+ */
+public function toggleStatus(DesignOption $designOption)
+{
+    $designOption->update([
+        'is_active' => !$designOption->is_active
+    ]);
+
+    $status = $designOption->is_active ? 'activated' : 'deactivated';
+
+    return redirect()
+        ->back()
+        ->with('success', __("Design option {$status} successfully!"));
+}
+
+
 }

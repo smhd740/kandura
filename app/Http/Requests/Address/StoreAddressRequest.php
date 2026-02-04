@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Address;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreAddressRequest extends FormRequest
 {
@@ -14,11 +15,18 @@ class StoreAddressRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:100'],
+            'name' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique('addresses')->where(function ($query) {
+                    return $query->where('user_id', auth()->id());
+                })
+            ],
             'city_id' => ['required', 'integer', 'exists:cities,id'],
             'street' => ['required', 'string', 'max:255'],
             'building_number' => ['nullable', 'string', 'max:50'],
-            'house_number' => ['unique','nullable', 'string', 'max:50'],
+            'house_number' => ['nullable', 'string', 'max:50'],  // ✅ شلنا unique - مش منطقي يكون unique
             'details' => ['nullable', 'string', 'max:500'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
@@ -30,6 +38,7 @@ class StoreAddressRequest extends FormRequest
     {
         return [
             'name.required' => 'Address name is required',
+            'name.unique' => 'You already have an address with this name',
             'city_id.required' => 'City is required',
             'city_id.exists' => 'Selected city does not exist',
             'street.required' => 'Street is required',

@@ -12,6 +12,7 @@ use App\Http\Requests\Design\ListDesignsRequest;
 use App\Http\Requests\Design\StoreDesignRequest;
 use App\Http\Requests\Design\UpdateDesignRequest;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Events\DesignCreated;
 
 class DesignController extends Controller
 {
@@ -67,6 +68,8 @@ class DesignController extends Controller
             $request->validated(),
             auth()->id()
         );
+
+        event(new DesignCreated($design));
 
         return response()->json([
             'success' => true,

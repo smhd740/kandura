@@ -10,13 +10,6 @@
             </h2>
             <div class="text-muted mt-1">{{ __('Manage system permissions') }}</div>
         </div>
-        <div class="col-auto ms-auto">
-            <div class="btn-list">
-                <a href="{{ route('admin.permissions.create') }}" class="btn btn-primary">
-                    <i class="ti ti-plus"></i> {{ __('Create Permission') }}
-                </a>
-            </div>
-        </div>
     </div>
 @endsection
 
@@ -109,13 +102,8 @@
                     </div>
                     <p class="empty-title">{{ __('No permissions found') }}</p>
                     <p class="empty-subtitle text-muted">
-                        {{ __('Start by creating your first permission.') }}
+                        {{ __('No permissions available in the system.') }}
                     </p>
-                    <div class="empty-action">
-                        <a href="{{ route('admin.permissions.create') }}" class="btn btn-primary">
-                            <i class="ti ti-plus"></i> {{ __('Create Permission') }}
-                        </a>
-                    </div>
                 </div>
             </div>
         </div>

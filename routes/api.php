@@ -10,12 +10,14 @@ use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\WalletController;
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\PaymentController;
-use App\Http\Controllers\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\StripeWebhookController;
+use App\Http\Controllers\Api\DeviceTokenController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Admin\DesignOptionController;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use App\Http\Controllers\Api\CouponController as ApiCouponController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\Admin\DesignController as AdminDesignController;
 use App\Http\Controllers\Admin\WalletController as AdminWalletController;
 use App\Http\Controllers\Admin\MeasurementController as AdminMeasurementController;
@@ -48,6 +50,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('auth/profile', [AuthController::class, 'profile']);
     Route::put('auth/profile', [AuthController::class, 'updateProfile']);
     Route::post('auth/profile', [AuthController::class, 'updateProfile']);
+
+
+    // Notifications Routes
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
+        Route::delete('/{id}', [NotificationController::class, 'destroy']);
+    });
+
+    // Device Tokens Routes
+    Route::prefix('device-tokens')->group(function () {
+        Route::get('/', [DeviceTokenController::class, 'index']);
+        Route::post('/', [DeviceTokenController::class, 'store']);
+        Route::delete('/{token}', [DeviceTokenController::class, 'destroy']);
+    });
+
 
     // Address Routes - كل route بصلاحيته
     Route::get('addresses', [AddressController::class, 'index'])->middleware('permission:view addresses');
@@ -137,3 +157,4 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::post('wallet/add-balance', [AdminWalletController::class, 'addBalance'])->middleware('permission:add wallet balance');
     Route::post('wallet/deduct-balance', [AdminWalletController::class, 'deductBalance'])->middleware('permission:deduct wallet balance');
 });
+
