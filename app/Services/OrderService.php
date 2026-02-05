@@ -325,20 +325,16 @@ public function cancelOrder(Order $order)
     DB::beginTransaction();
 
     try {
-        // Update status
-        $order->status = 'cancelled';
-        $order->save();
-
         // Refund coupon usage if coupon was used
-if ($order->coupon_id) {
-    $coupon = $order->coupon;
-    $coupon->decrementUsage();
+        if ($order->coupon_id) {
+            $coupon = $order->coupon;
+            $coupon->decrementUsage();
 
-    $coupon->usages()
-        ->where('user_id', $order->user_id)
-        ->where('order_id', $order->id)
-        ->delete();
-}
+            $coupon->usages()
+                ->where('user_id', $order->user_id)
+                ->where('order_id', $order->id)
+                ->delete();
+        }
 
         // Refund to wallet if paid from wallet
         if ($order->payment_method === 'wallet' && $order->payment_status === 'paid') {
@@ -356,15 +352,19 @@ if ($order->coupon_id) {
                 );
 
                 if ($refundResult['success']) {
-                    // Update order payment status
-                    $order->payment_status = 'refunded';
-                    $order->save();
+                    // تغيير payment_status لـ pending
+                    $order->payment_status = 'pending';
+                    Log::info("Order #{$order->order_number} refunded successfully. Amount: {$order->total_amount}");
                 }
             }
         }
 
-        // Soft delete
-        $order->delete();
+        // Update status to cancelled
+        $order->status = 'cancelled';
+        $order->save();
+
+        // ✅ شلنا الـ soft delete - خلي الطلب موجود بس حالته cancelled
+        // $order->delete();
 
         DB::commit();
 

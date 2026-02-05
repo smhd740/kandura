@@ -73,37 +73,33 @@ class OrderController extends Controller
     }
 
     public function updateStatus(Request $request, Order $order)
-    {
-        $request->validate([
-            'status' => 'required|in:pending,processing,completed,cancelled',
-        ]);
+{
+    $request->validate([
+        'status' => 'required|in:pending,processing,completed,cancelled',
+    ]);
 
-        if (!$order->canUpdateStatus() && $request->status !== 'cancelled') {
-            return redirect()->back()->with('error', __('Cannot update status for this order.'));
-        }
-
-        $order->update(['status' => $request->status]);
-
-        return redirect()->back()->with('success', __('Order status updated successfully.'));
+    if (!$order->canUpdateStatus() && $request->status !== 'cancelled') {
+        return redirect()->back()->with('error', __('Cannot update status for this order.'));
     }
 
-    public function markAsPaid(Order $order)
-    {
-        if ($order->payment_status === 'paid') {
-            return redirect()->back()->with('error', __('Order is already marked as paid.'));
+    // ✅ إذا الحالة الجديدة cancelled، استخدم cancelOrder من OrderService
+    if ($request->status === 'cancelled') {
+        try {
+            $orderService = app(\App\Services\OrderService::class);
+            $orderService->cancelOrder($order);
+
+            return redirect()->back()->with('success', __('Order cancelled successfully. Money refunded to wallet if applicable.'));
+        } catch (\Exception $e) {
+            \Log::error('Order cancellation failed: ' . $e->getMessage());
+            return redirect()->back()->with('error', __('Failed to cancel order: ') . $e->getMessage());
         }
-
-        if ($order->payment_method !== 'cod') {
-            return redirect()->back()->with('error', __('Only COD orders can be manually marked as paid.'));
-        }
-
-        $order->update([
-            'payment_status' => 'paid',
-            'paid_at' => now(),
-        ]);
-
-        return redirect()->back()->with('success', __('Order marked as paid successfully.'));
     }
+
+    // للحالات العادية
+    $order->update(['status' => $request->status]);
+
+    return redirect()->back()->with('success', __('Order status updated successfully.'));
+}
 
     public function statistics()
 {
