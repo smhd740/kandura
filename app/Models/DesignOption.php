@@ -59,18 +59,18 @@ class DesignOption extends Model
     public function designs()
     {
         return $this->belongsToMany(Design::class, 'design_option_selections')
-                    ->withPivot('custom_value')
-                    ->withTimestamps();
+            ->withPivot('custom_value')
+            ->withTimestamps();
     }
 
     /**
- * DesignOption belongs to many Order Items
- */
-public function orderItems()
-{
-    return $this->belongsToMany(OrderItem::class, 'design_option_order_item')
-        ->withTimestamps();
-}
+     * DesignOption belongs to many Order Items
+     */
+    public function orderItems()
+    {
+        return $this->belongsToMany(OrderItem::class, 'design_option_order_item')
+            ->withTimestamps();
+    }
     /**
      * Scope: Filter only active options
      */
@@ -92,9 +92,12 @@ public function orderItems()
      */
     public function scopeSearch($query, $search)
     {
-        return $query->where('name->ar', 'like', "%{$search}%")
-                    ->orWhere('name->en', 'like', "%{$search}%")
-                    ->orWhere('type', 'like', "%{$search}%");
+        $search = strtolower($search);
+
+        return $query->where(function ($q) use ($search) {
+            $q->whereRaw('LOWER(name->"$.en") LIKE ?', ['%' . $search . '%'])
+                ->orWhereRaw('LOWER(name->"$.ar") LIKE ?', ['%' . $search . '%']);
+        });
     }
 
     /**

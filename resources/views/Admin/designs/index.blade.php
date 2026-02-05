@@ -52,7 +52,7 @@
                     </div>
                     <div class="d-flex align-items-baseline">
                         <div class="h1 mb-0 me-2">{{ number_format($avgPrice ?? 0, 0) }}</div>
-                        <div class="badge bg-green-lt">{{ __('SYP') }}</div>
+                        <div class="badge bg-green-lt">{{ __('USD') }}</div>
                     </div>
                 </div>
             </div>
@@ -230,7 +230,7 @@
 
                     {{-- Price --}}
                     <div class="d-flex align-items-center mb-2">
-                        <div class="h3 mb-0 text-primary">{{ number_format($design->price, 0) }} {{ __('SYP') }}</div>
+                        <div class="h3 mb-0 text-primary">${{ number_format($design->price, 0) }} {{ __('USD') }}</div>
                     </div>
 
                     {{-- Sizes --}}

@@ -186,12 +186,25 @@
                         <tr>
                             <td><span class="text-muted">#{{ $transaction->id }}</span></td>
 
-                           <td>
+                           {{-- <td>
     @if($transaction->wallet && $transaction->wallet->user)
         <div>{{ $transaction->wallet->user->name }}</div>
         <div class="text-muted small">{{ $transaction->wallet->user->email }}</div>
     @else
         <div class="text-muted">{{ __('N/A') }}</div>
+    @endif
+</td> --}}
+
+<td>
+    @php
+        $user = $transaction->user ?? $transaction->wallet?->user ?? $transaction->order?->user;
+    @endphp
+
+    @if($user)
+        <div>{{ $user->name }}</div>
+        <div class="text-muted small">{{ $user->email }}</div>
+    @else
+        <div class="text-muted">{{ __('System') }}</div>
     @endif
 </td>
 

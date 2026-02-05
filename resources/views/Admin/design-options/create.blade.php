@@ -72,7 +72,7 @@
                         <div id="imagePreview" class="mt-3"></div>
                     </div>
 
-                    {{-- Status --}}
+                    {{-- Status
                     <div class="mb-3">
                         <label class="form-check form-switch">
                             <input class="form-check-input"
@@ -87,7 +87,7 @@
                         </small>
                     </div>
 
-                    <hr>
+                    <hr> --}}
 
                     {{-- Name Translations --}}
                     @foreach(config('app.locales', ['en', 'ar']) as $locale)

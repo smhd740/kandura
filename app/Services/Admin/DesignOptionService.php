@@ -15,10 +15,16 @@ class DesignOptionService
     {
         $query = DesignOption::query();
 
-        // Search
-        if (!empty($filters['search'])) {
-            $query->search($filters['search']);
-        }
+
+        // Search - Case insensitive + Partial match
+// Search
+if (!empty($filters['search'])) {
+    $search = $filters['search'];
+    $query->where(function($q) use ($search) {
+        $q->whereRaw('LOWER(JSON_EXTRACT(name, "$.en")) LIKE ?', ['%' . strtolower($search) . '%'])
+          ->orWhereRaw('LOWER(JSON_EXTRACT(name, "$.ar")) LIKE ?', ['%' . strtolower($search) . '%']);
+    });
+}
 
         // Filter by type
         if (!empty($filters['type'])) {

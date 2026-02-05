@@ -36,29 +36,20 @@
                         <div class="row g-3">
                             @foreach($design->images as $image)
                             <div class="col-md-6">
-                                <img src="{{ asset('storage/' . $image->image_path) }}"
-                                     class="img-fluid rounded"
-                                     alt="{{ $design->getTranslation('name', app()->getLocale()) }}"
-                                     style="width: 100%; height: 300px; object-fit: cover; cursor: pointer;"
-                                     data-bs-toggle="modal"
-                                     data-bs-target="#imageModal{{ $image->id }}">
+                                <div class="position-relative">
+                                    <a href="{{ asset('storage/' . $image->image_path) }}"
+                                       class="glightbox"
+                                       data-gallery="design-gallery">
+                                        <img src="{{ asset('storage/' . $image->image_path) }}"
+                                             class="img-fluid rounded design-thumbnail"
+                                             alt="{{ $design->getTranslation('name', app()->getLocale()) }}">
+                                    </a>
 
-                                @if($image->is_primary)
-                                    <span class="badge bg-success mt-2">{{ __('Primary Image') }}</span>
-                                @endif
-
-                                {{-- Image Modal --}}
-                                <div class="modal modal-blur fade" id="imageModal{{ $image->id }}" tabindex="-1">
-                                    <div class="modal-dialog modal-lg modal-dialog-centered">
-                                        <div class="modal-content">
-                                            <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close" style="z-index: 1;"></button>
-                                            <div class="modal-body p-0">
-                                                <img src="{{ asset('storage/' . $image->image_path) }}"
-                                                     class="img-fluid"
-                                                     alt="{{ $design->getTranslation('name', app()->getLocale()) }}">
-                                            </div>
-                                        </div>
-                                    </div>
+                                    @if($image->is_primary)
+                                        <span class="badge bg-success position-absolute top-0 end-0 m-2">
+                                            {{ __('Primary Image') }}
+                                        </span>
+                                    @endif
                                 </div>
                             </div>
                             @endforeach
@@ -178,9 +169,9 @@
                 </div>
                 <div class="card-body text-center">
                     <div class="display-3 fw-bold text-primary">
-                        {{ number_format($design->price, 0) }}
+                        ${{ number_format($design->price, 0) }}
                     </div>
-                    <div class="text-muted">{{ __('Syrian Pounds') }}</div>
+                    <div class="text-muted">{{ __('') }}</div>
                 </div>
             </div>
 
@@ -316,9 +307,35 @@
 @endsection
 
 @push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
 <style>
     .gap-2 {
         gap: 0.5rem;
     }
+
+    .design-thumbnail {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: block;
+    }
+
+    .glightbox:hover .design-thumbnail {
+        transform: scale(1.05);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
 </style>
+@endpush
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/gh/mcstudios/glightbox/dist/js/glightbox.min.js"></script>
+<script>
+    const lightbox = GLightbox({
+        touchNavigation: true,
+        loop: true,
+        autoplayVideos: true
+    });
+</script>
 @endpush
