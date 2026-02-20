@@ -62,12 +62,12 @@ class Address extends Model
     }
 
     /**
- * Address has many Orders
- */
-public function orders()
-{
-    return $this->hasMany(Order::class);
-}
+     * Address has many Orders
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 
     /**
      * Scope: Filter default addresses
@@ -92,12 +92,12 @@ public function orders()
     {
         return $query->where(function ($q) use ($search) {
             $q->where('name', 'like', "%{$search}%")
-              ->orWhere('street', 'like', "%{$search}%")
-              ->orWhere('details', 'like', "%{$search}%")
-              ->orWhereHas('city', function ($cityQuery) use ($search) {
-                  $cityQuery->where('name->ar', 'like', "%{$search}%")
-                           ->orWhere('name->en', 'like', "%{$search}%");
-              });
+                ->orWhere('street', 'like', "%{$search}%")
+                ->orWhere('details', 'like', "%{$search}%")
+                ->orWhereHas('city', function ($cityQuery) use ($search) {
+                    $cityQuery->where('name->ar', 'like', "%{$search}%")
+                        ->orWhere('name->en', 'like', "%{$search}%");
+                });
         });
     }
 
@@ -147,24 +147,24 @@ public function orders()
     /**
      * Model Events
      */
-        // When setting an address as default, remove default from other addresses
+    // When setting an address as default, remove default from other addresses
     protected static function booted(): void
-{
-    Address::creating(function ($address) {
-        if ($address->is_default) {
-            Address::where('user_id', $address->user_id)
-                ->where('is_default', true)
-                ->update(['is_default' => false]);
-        }
-    });
+    {
+        Address::creating(function ($address) {
+            if ($address->is_default) {
+                Address::where('user_id', $address->user_id)
+                    ->where('is_default', true)
+                    ->update(['is_default' => false]);
+            }
+        });
 
-    Address::updating(function ($address) {
-        if ($address->is_default && $address->isDirty('is_default')) {
-            Address::where('user_id', $address->user_id)
-                ->where('id', '!=', $address->id)
-                ->where('is_default', true)
-                ->update(['is_default' => false]);
-        }
-    });
-}
+        Address::updating(function ($address) {
+            if ($address->is_default && $address->isDirty('is_default')) {
+                Address::where('user_id', $address->user_id)
+                    ->where('id', '!=', $address->id)
+                    ->where('is_default', true)
+                    ->update(['is_default' => false]);
+            }
+        });
+    }
 }

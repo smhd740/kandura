@@ -61,7 +61,7 @@ class Design extends Model
     public function measurements()
     {
         return $this->belongsToMany(Measurement::class, 'design_measurements')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     /**
@@ -94,17 +94,17 @@ class Design extends Model
     public function designOptions()
     {
         return $this->belongsToMany(DesignOption::class, 'design_option_selections')
-                    ->withPivot('custom_value')
-                    ->withTimestamps();
+            ->withPivot('custom_value')
+            ->withTimestamps();
     }
 
     /**
- * Design has many Order Items
- */
-public function orderItems()
-{
-    return $this->hasMany(OrderItem::class);
-}
+     * Design has many Order Items
+     */
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
 
     /**
      * Scope: Filter by user
@@ -163,12 +163,12 @@ public function orderItems()
     {
         return $query->where(function ($q) use ($search) {
             $q->where('name->ar', 'like', "%{$search}%")
-              ->orWhere('name->en', 'like', "%{$search}%")
-              ->orWhere('description->ar', 'like', "%{$search}%")
-              ->orWhere('description->en', 'like', "%{$search}%")
-              ->orWhereHas('user', function ($userQuery) use ($search) {
-                  $userQuery->where('name', 'like', "%{$search}%");
-              });
+                ->orWhere('name->en', 'like', "%{$search}%")
+                ->orWhere('description->ar', 'like', "%{$search}%")
+                ->orWhere('description->en', 'like', "%{$search}%")
+                ->orWhereHas('user', function ($userQuery) use ($search) {
+                    $userQuery->where('name', 'like', "%{$search}%");
+                });
         });
     }
 

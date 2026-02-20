@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\AdminUI;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
+use App\Http\Controllers\Controller;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
 class RoleController extends Controller
 {
@@ -62,7 +63,7 @@ class RoleController extends Controller
         }
 
         // Clear permission cache
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         return redirect()
             ->route('admin.roles.index')
@@ -134,7 +135,7 @@ class RoleController extends Controller
         $role->syncPermissions($validPermissionIds);
 
         // Clear permission cache
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         return redirect()
             ->route('admin.roles.index')
@@ -163,7 +164,7 @@ class RoleController extends Controller
         $role->delete();
 
         // Clear permission cache
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         return redirect()
             ->route('admin.roles.index')

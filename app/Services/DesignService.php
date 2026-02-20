@@ -21,11 +21,11 @@ class DesignService
         // Search
         if (!empty($filters['search'])) {
             $search = $filters['search'];
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name->ar', 'like', "%{$search}%")
-                  ->orWhere('name->en', 'like', "%{$search}%")
-                  ->orWhere('description->ar', 'like', "%{$search}%")
-                  ->orWhere('description->en', 'like', "%{$search}%");
+                    ->orWhere('name->en', 'like', "%{$search}%")
+                    ->orWhere('description->ar', 'like', "%{$search}%")
+                    ->orWhere('description->en', 'like', "%{$search}%");
             });
         }
 
@@ -218,7 +218,7 @@ class DesignService
             // نبحث في اسم التصميم أو وصفه
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'like', "%{$searchTerm}%")
-                ->orWhere('description', 'like', "%{$searchTerm}%");
+                    ->orWhere('description', 'like', "%{$searchTerm}%");
             });
         }
 
@@ -259,7 +259,7 @@ class DesignService
             $query->where('user_id', $filters['creator_id']);
         }
 
-    //  7. الترتيب
+        //  7. الترتيب
         // الترتيب الافتراضي: حسب تاريخ الإنشاء من الأحدث للأقدم
         $sortBy = $filters['sort_by'] ?? 'created_at'; // name, price, created_at
         $sortOrder = $filters['sort_order'] ?? 'desc'; // asc أو desc

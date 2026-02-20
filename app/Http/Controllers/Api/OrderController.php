@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
-use App\Services\OrderService;
-use App\Http\Requests\StoreOrderRequest;
-use App\Http\Resources\OrderResource;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Models\Order;
 use App\Events\OrderCreated;
+use Illuminate\Http\Request;
+use App\Services\OrderService;
+use Illuminate\Http\JsonResponse;
+use App\Http\Controllers\Controller;
+use App\Http\Resources\OrderResource;
+use App\Http\Requests\StoreOrderRequest;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
 class OrderController extends Controller
 {
     use AuthorizesRequests;
@@ -28,7 +31,7 @@ class OrderController extends Controller
     {
         try {
             // Authorization checked in Request + Policy
-            $this->authorize('create', \App\Models\Order::class);
+            $this->authorize('create', Order::class);
 
             // Create order
             $order = $this->orderService->createOrder(
@@ -132,7 +135,7 @@ class OrderController extends Controller
                 'data' => new OrderResource($order),
             ]);
 
-        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+        } catch (AuthorizationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => app()->getLocale() === 'ar'
@@ -184,7 +187,7 @@ class OrderController extends Controller
                     : 'Order cancelled successfully',
             ]);
 
-        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+        } catch (AuthorizationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => app()->getLocale() === 'ar'

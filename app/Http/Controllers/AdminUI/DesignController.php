@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\AdminUI;
 
-use App\Http\Controllers\Controller;
 use App\Models\Design;
+use App\Models\DesignImage;
 use App\Models\DesignOption;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 
 class DesignController extends Controller
 {
@@ -19,15 +20,15 @@ class DesignController extends Controller
         // Search by design name
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name->en', 'like', "%{$search}%")
-                  ->orWhere('name->ar', 'like', "%{$search}%");
+                    ->orWhere('name->ar', 'like', "%{$search}%");
             });
         }
 
         // Search by user name
         if ($request->filled('user')) {
-            $query->whereHas('user', function($q) use ($request) {
+            $query->whereHas('user', function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->user}%");
             });
         }
@@ -45,7 +46,7 @@ class DesignController extends Controller
             );
         }
 
-        // Filter by design option (Bonus)
+        // Filter by design option
         if ($request->filled('design_option')) {
             $query->byDesignOption($request->design_option);
         }
@@ -57,7 +58,7 @@ class DesignController extends Controller
         $totalDesigns = Design::count();
         $totalCreators = Design::distinct('user_id')->count('user_id');
         $avgPrice = Design::avg('price');
-        $totalImages = \App\Models\DesignImage::count();
+        $totalImages = DesignImage::count();
 
         // Design options for filter
         $designOptions = DesignOption::active()

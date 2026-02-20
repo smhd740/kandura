@@ -100,7 +100,7 @@
                             <option value="">{{ __('Select base role...') }}</option>
 
                             @if(auth()->user()->role === 'super_admin')
-                                <option value="super_admin" {{ old('role') == 'super_admin' ? 'selected' : '' }}>{{ __('Super Admin') }}</option>
+                                {{-- <option value="super_admin" {{ old('role') == 'super_admin' ? 'selected' : '' }}>{{ __('Super Admin') }}</option> --}}
                                 <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>{{ __('Admin') }}</option>
                             @endif
 

@@ -241,8 +241,7 @@
 
                 <!-- Brand -->
                 <h1 class="navbar-brand navbar-brand-autodark">
-                    <a href="{{ route('dashboard') }}" class="d-flex align-items-center text-white text-decoration-none">
-                        <i class="ti ti-building-store fs-1 me-2"></i>
+<a href="{{ route('dashboard') }}" class="d-flex align-items-center text-decoration-none" style="color: #1a5294;">                        <i class="ti ti-building-store fs-1 me-2"></i>
                         <span class="fs-4 fw-bold">{{ __('Kandura Store') }}</span>
                     </a>
                 </h1>
@@ -477,7 +476,7 @@
                         <span class="navbar-toggler-icon"></span>
                     </button>
 
-                    <div class="navbar-nav flex-row order-md-last">
+                    {{-- <div class="navbar-nav flex-row order-md-last">
                         <!-- Language Switcher -->
                         <div class="nav-item dropdown me-2">
                             <a href="#" class="nav-link px-0" data-bs-toggle="dropdown" aria-label="Language">
@@ -502,6 +501,77 @@
                                     <div class="mt-1 small text-muted">
                                         <span class="badge bg-primary-lt">{{ __(ucfirst(auth()->user()->role)) }}</span>
                                     </div>
+                                </div>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                                <a href="{{ route('profile.edit') }}" class="dropdown-item">
+                                    <i class="ti ti-user icon"></i> {{ __('Profile') }}
+                                </a>
+                                <a href="#" class="dropdown-item">
+                                    <i class="ti ti-settings icon"></i> {{ __('Settings') }}
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="ti ti-logout icon"></i> {{ __('Logout') }}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div> --}}
+
+
+
+                    <div class="navbar-nav flex-row order-md-last align-items-center">
+                        <!-- Language Switcher -->
+                        <div class="nav-item dropdown me-3">
+                            <a href="#" class="nav-link px-0 d-flex align-items-center" data-bs-toggle="dropdown" aria-label="Language">
+                                <i class="ti ti-language fs-2"></i>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end">
+                                <a href="{{ route('locale.switch', 'ar') }}" class="dropdown-item {{ app()->getLocale() == 'ar' ? 'active' : '' }}">
+                                    🇸🇾 العربية
+                                </a>
+                                <a href="{{ route('locale.switch', 'en') }}" class="dropdown-item {{ app()->getLocale() == 'en' ? 'active' : '' }}">
+                                    🇬🇧 English
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Notifications Bell -->
+                        <div class="nav-item dropdown me-3">
+                            <a href="#" class="nav-link px-0 d-flex align-items-center position-relative" data-bs-toggle="dropdown" aria-label="Notifications" id="notificationBell">
+                                <i class="ti ti-bell fs-2"></i>
+                                <span class="badge bg-danger badge-notification badge-blink d-none" id="notificationBadge" style="position: absolute; top: -4px; right: -6px; font-size: 0.65rem; min-width: 16px; height: 16px; padding: 0 4px; line-height: 16px; border-radius: 50%;">0</span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow" style="width: 360px; max-height: 420px; overflow: hidden;" id="notificationDropdown">
+                                <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+                                    <h6 class="mb-0 fw-bold">
+                                        <i class="ti ti-bell me-1"></i> {{ __('Notifications') }}
+                                    </h6>
+                                    <a href="#" class="text-muted small" id="markAllRead" style="display: none;">
+                                        {{ __('Mark all read') }}
+                                    </a>
+                                </div>
+                                <div id="notificationList" style="max-height: 320px; overflow-y: auto;">
+                                    <div class="text-center text-muted py-4" id="noNotifications">
+                                        <i class="ti ti-bell-off fs-1 d-block mb-2" style="opacity: 0.3;"></i>
+                                        <span class="small">{{ __('No new notifications') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- User Menu -->
+                        <div class="nav-item dropdown">
+                            <a href="#" class="nav-link d-flex lh-1 text-reset p-0 align-items-center" data-bs-toggle="dropdown" aria-label="Open user menu">
+                                <span class="avatar avatar-sm">{{ strtoupper(substr(auth()->user()->name, 0, 2)) }}</span>
+                                <div class="d-none d-xl-block ps-2">
+                                    <div class="fw-bold">{{ auth()->user()->name }}</div>
+                                    {{-- <div class="mt-1 small text-muted">
+                                        <span class="badge bg-primary-lt">{{ __(ucfirst(auth()->user()->role)) }}</span>
+                                    </div> --}}
                                 </div>
                             </a>
                             <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
@@ -766,6 +836,163 @@ messaging.onMessage((payload) => {
         notification.close();
     };
 });
+
+
+// ===== NOTIFICATION BELL SYSTEM =====
+function loadNotifications() {
+    // Load unread count
+    fetch('/api/notifications/unread-count', {
+        headers: {
+            'Authorization': 'Bearer ' + authToken,
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateNotificationBadge(data.data.unread_count);
+        }
+    })
+    .catch(err => console.error('Error loading unread count:', err));
+
+    // Load notification list
+    fetch('/api/notifications?per_page=15', {
+        headers: {
+            'Authorization': 'Bearer ' + authToken,
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('📋 Notifications API response:', data);
+        if (data.success && data.data && data.data.data) {
+            renderNotifications(data.data.data);
+        }
+    })
+    .catch(err => console.error('Error loading notifications:', err));
+}
+
+function updateNotificationBadge(count) {
+    const badge = document.getElementById('notificationBadge');
+    const markAllBtn = document.getElementById('markAllRead');
+    if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : count;
+        badge.classList.remove('d-none');
+        if (markAllBtn) markAllBtn.style.display = 'inline';
+    } else {
+        badge.classList.add('d-none');
+        if (markAllBtn) markAllBtn.style.display = 'none';
+    }
+}
+
+function renderNotifications(notifications) {
+    const list = document.getElementById('notificationList');
+    const noNotif = document.getElementById('noNotifications');
+
+    if (!notifications || notifications.length === 0) {
+        noNotif.style.display = 'block';
+        return;
+    }
+
+    noNotif.style.display = 'none';
+    let html = '';
+
+    notifications.forEach(function(notif) {
+        const notifData = notif.data || {};
+        const isUnread = !notif.read_at;
+        const bgClass = isUnread ? 'background: rgba(32, 107, 196, 0.05);' : '';
+
+        let icon = 'ti-bell';
+        let iconColor = 'bg-primary';
+        const notifType = notifData.type || '';
+
+        if (notifType === 'design_created') {
+            icon = 'ti-palette';
+            iconColor = 'bg-success';
+        } else if (notifType === 'new_order_admin' || notifType === 'new_order_user') {
+            icon = 'ti-shopping-cart';
+            iconColor = 'bg-warning';
+        } else if (notifType === 'order_status_changed') {
+            icon = 'ti-refresh';
+            iconColor = 'bg-info';
+        }
+
+        const createdAt = notif.created_at ? new Date(notif.created_at).toLocaleString() : '';
+        const title = notifData.title || notifData.message || 'Notification';
+        const body = notifData.body || notifData.description || '';
+        const orderId = notifData.order_id || '';
+        const designId = notifData.design_id || '';
+
+        html += `
+            <a href="#" class="dropdown-item d-flex align-items-start py-2 px-3" style="${bgClass} border-bottom: 1px solid rgba(0,0,0,.05);" onclick="markAsRead(event, '${notif.id}', '${notifType}', '${orderId}', '${designId}')">
+                <span class="avatar avatar-sm ${iconColor} text-white me-2 mt-1" style="min-width: 32px; width: 32px; height: 32px;">
+                    <i class="ti ${icon}" style="font-size: 14px;"></i>
+                </span>
+                <div class="flex-fill" style="min-width: 0;">
+                    <div class="fw-bold small text-truncate">${title}</div>
+                    <div class="text-muted small text-truncate">${body}</div>
+                    <div class="text-muted" style="font-size: 0.7rem;">${createdAt}</div>
+                </div>
+                ${isUnread ? '<span class="ms-2 mt-2"><span class="badge bg-primary" style="width:8px; height:8px; padding:0; border-radius:50%;"></span></span>' : ''}
+            </a>
+        `;
+    });
+
+    list.innerHTML = html;
+}
+
+function markAsRead(event, notifId, type, orderId, designId) {
+    event.preventDefault();
+
+    fetch('/api/notifications/' + notifId + '/read', {
+        method: 'POST',
+        headers: {
+            'Authorization': 'Bearer ' + authToken,
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(() => {
+        let url = '/dashboard';
+        if ((type === 'new_order_admin' || type === 'new_order_user' || type === 'order_status_changed') && orderId) {
+            url = '/admin/orders/' + orderId;
+        } else if (type === 'design_created' && designId) {
+            url = '/admin/designs/' + designId;
+        }
+        window.location.href = url;
+    })
+    .catch(() => {
+        window.location.href = '/dashboard';
+    });
+}
+
+document.getElementById('markAllRead')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    fetch('/api/notifications/read-all', {
+        method: 'POST',
+        headers: {
+            'Authorization': 'Bearer ' + authToken,
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(() => loadNotifications())
+    .catch(err => console.error('Error:', err));
+});
+
+// Load notifications on page load
+setTimeout(() => loadNotifications(), 2000);
+
+// Refresh notifications every 30 seconds
+setInterval(() => loadNotifications(), 30000);
+
+// Reload notifications when bell is clicked
+document.getElementById('notificationBell')?.addEventListener('click', function() {
+    loadNotifications();
+});
+
 
 // Register Service Worker and enable notifications
 if ('serviceWorker' in navigator) {
